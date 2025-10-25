@@ -4,7 +4,7 @@ import { $ } from "bun";
 
 async function main() {
   // Load presentation markdown
-  const markdown = await Bun.file("./presentation.md").text();
+  const markdown = await Bun.file("./static/presentation.md").text();
   const slides = parsePresentation(markdown);
 
   if (slides.length === 0) {
