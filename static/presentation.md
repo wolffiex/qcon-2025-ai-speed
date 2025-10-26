@@ -195,7 +195,7 @@ const offset = text.indexOf(wrappedLine)  // Breaks!
 Episode II 🐚
 :::
 
-# Shell Implementation 🐚
+# Shell
 
 ## The Setup
 
@@ -208,8 +208,6 @@ exec('ls -la')  // How hard could this be?
 **Spoiler:** 6+ months, 3 major rewrites, 5.3x code growth
 
 ---
-
-# Phase 1: From Sequential to Parallel
 
 ## The Initial Approach
 
@@ -232,7 +230,7 @@ PersistentShell: "Sorry, one at a time" ❌
 
 ---
 
-## The Rewrite (March 29, 2025)
+## The Rewrite 
 
 **Deleted 773 lines**, rebuilt as **346 lines:**
 
@@ -249,7 +247,7 @@ export async function exec(command: string) {
 
 ---
 
-# Phase 2: Preserving User Environment
+## The Twist
 
 **The Problem** (April 2025):
 
@@ -280,7 +278,7 @@ source /snapshot.sh && eval "$COMMAND"
 
 ---
 
-## The Synchronization Challenge
+## Synchronization Challenge
 
 **Problem:** How to write from and read to the shell
 
@@ -292,7 +290,7 @@ source /snapshot.sh && eval "$COMMAND"
 
 ---
 
-# Phase 3: Production Reality
+## Production Reality
 
 **State management is subtle:**
 - What persists? (CWD yes, env vars no)
