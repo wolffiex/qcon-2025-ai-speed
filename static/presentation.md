@@ -612,7 +612,7 @@ SQLite at Claude Code: ❌ Wrong choice
 ## The Moments That Mattered
 
 **Cursor:** Realizing "we need perfect keystroke control"
-- **Why:** Libraries can't do `/` and `@` inception
+- **Why:** Libraries can't do `/` and `@` interception
 - Led to: Going deep, building right
 - 945 lines = right answer
 
