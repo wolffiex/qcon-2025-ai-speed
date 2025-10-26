@@ -1,5 +1,6 @@
 {
   "name": "ansishadow",
+  "word_spacing": 6,
   "rows": [
     {
       "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",

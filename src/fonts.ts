@@ -18,6 +18,7 @@ export interface Row {
 export interface FontMetadata {
   name: string;
   rows: Row[];
+  word_spacing?: number;  // Optional: spaces between words (default: 8)
 }
 
 export interface CharMetadata {
@@ -136,7 +137,9 @@ export class Font {
    * Render text string and return as array of strings (one per line)
    * Each line represents one horizontal slice of all the characters
    */
-  render(text: string, spacing: number = 1): string[] {
+  render(text: string, spacing: number = 1, word_spacing?: number): string[] {
+    // Use font's word_spacing if available, otherwise default to 8
+    const actual_word_spacing = word_spacing ?? this.metadata.word_spacing ?? 8;
     if (!text) {
       return new Array(this.height).fill("");
     }
@@ -147,6 +150,15 @@ export class Font {
     // Process each character
     for (let i = 0; i < text.length; i++) {
       const char = text[i];
+
+      // Handle spaces as word separators with wider gap
+      if (char === ' ') {
+        for (let line_idx = 0; line_idx < this.height; line_idx++) {
+          result[line_idx] += " ".repeat(actual_word_spacing);
+        }
+        continue;
+      }
+
       const char_lines = this.render_char(char);
 
       // Add character to each line
@@ -154,8 +166,8 @@ export class Font {
         const char_line = char_lines[line_idx] || "";
         result[line_idx] += char_line;
 
-        // Add spacing between characters (except after last char)
-        if (i < text.length - 1) {
+        // Add spacing between characters (except after last char or before space)
+        if (i < text.length - 1 && text[i + 1] !== ' ') {
           result[line_idx] += " ".repeat(spacing);
         }
       }
@@ -167,8 +179,8 @@ export class Font {
   /**
    * Render text and return as a single string with newlines
    */
-  render_to_string(text: string, spacing: number = 1): string {
-    return this.render(text, spacing).join("\n");
+  render_to_string(text: string, spacing: number = 1, word_spacing?: number): string {
+    return this.render(text, spacing, word_spacing).join("\n");
   }
 
   /**
