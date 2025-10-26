@@ -168,8 +168,8 @@ async function main() {
   }
 
   const font_name = args[0].replace(".json", "").replace(".txt", "");
-  const json_path = `src/fonts/${font_name}.json`;
-  const txt_path = `src/fonts/${font_name}.txt`;
+  const json_path = `static/fonts/${font_name}.json`;
+  const txt_path = `static/fonts/${font_name}.txt`;
 
   if (!existsSync(json_path)) {
     console.error(`❌ JSON file not found: ${json_path}`);
