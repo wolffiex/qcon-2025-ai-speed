@@ -96,6 +96,46 @@ align: right
       expect(slides[0].title).toBe("Title");
       expect(slides[0].frontmatter).toEqual({});
     });
+
+    test("parses image-position frontmatter", () => {
+      const markdown = `---
+image-position: 100, 20
+---
+# Title`;
+      const slides = parsePresentation(markdown);
+
+      expect(slides[0].frontmatter).toEqual({
+        image_position: "100, 20",
+      });
+    });
+
+    test("parses image_position frontmatter (underscore variant)", () => {
+      const markdown = `---
+image_position: 50, 10
+---
+# Title`;
+      const slides = parsePresentation(markdown);
+
+      expect(slides[0].frontmatter).toEqual({
+        image_position: "50, 10",
+      });
+    });
+
+    test("parses all frontmatter fields together", () => {
+      const markdown = `---
+font: ansishadow
+align: center
+image-position: 190, 15
+---
+# Title`;
+      const slides = parsePresentation(markdown);
+
+      expect(slides[0].frontmatter).toEqual({
+        font: "ansishadow",
+        align: "center",
+        image_position: "190, 15",
+      });
+    });
   });
 
   describe("heading parsing", () => {

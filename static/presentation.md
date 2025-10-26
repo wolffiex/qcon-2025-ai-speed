@@ -1,8 +1,10 @@
 ---
 font: ansishadow
 align: center
+image-position: 96, 6
 ---
 # Engineering\nat\nAI Speed
+![lightning](lightning.txt)
 
 ---
 
@@ -63,7 +65,13 @@ Three war stories:
 
 ---
 
-# Episode 1: Virtualizing Input 🎯
+---
+font: ansishadow
+align: center
+---
+# Episode 1:\nVirtualizing\nInput
+
+---
 
 ## The Problem
 

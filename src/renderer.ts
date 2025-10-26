@@ -4,7 +4,7 @@ import {
   BoxRenderable,
   type CliRenderer,
 } from "@opentui/core";
-import type { Slide, SlideElement } from "./parser";
+import type { Slide, SlideElement, Image } from "./parser";
 import { Font } from "./fonts";
 
 export class PresentationRenderer {
@@ -57,6 +57,13 @@ export class PresentationRenderer {
     // Now make it transparent for the actual content
     bgBox.backgroundColor = "transparent";
 
+    // Render background images first (zIndex: -1)
+    for (const element of slide.elements) {
+      if (element.type === "image") {
+        await this.renderBackgroundImage(element, slide.frontmatter);
+      }
+    }
+
     // Determine font and alignment from frontmatter
     const font_name = slide.frontmatter?.font || "jsstickletters";
     const alignment = slide.frontmatter?.align || "left";
@@ -73,8 +80,8 @@ export class PresentationRenderer {
 
     // Calculate vertical position - start at top with border
     let title_top = 2;
-    if (alignment === "center" && slide.elements.length === 0) {
-      // Vertically center if there's no content
+    if (alignment === "center" && slide.elements.filter(e => e.type !== "image").length === 0) {
+      // Vertically center if there's no content (excluding images)
       title_top = Math.floor((this.renderer.height - title_lines.length) / 2);
     }
 
@@ -130,6 +137,9 @@ export class PresentationRenderer {
     let yOffset = title_top + title_lines.length + 3;
 
     for (const element of slide.elements) {
+      // Skip images as they're already rendered as backgrounds
+      if (element.type === "image") continue;
+
       const result = await this.renderElement(element, 8, yOffset);
       yOffset = result.nextY;
     }
@@ -137,6 +147,39 @@ export class PresentationRenderer {
     // Highlight first link if any
     if (this.links.length > 0) {
       this.highlightLink(0);
+    }
+  }
+
+  private async renderBackgroundImage(element: Image, frontmatter?: import("./parser").SlideFrontmatter) {
+    try {
+      if (!frontmatter?.image_position) return;
+
+      const imagePath = `./static/${element.filename}`;
+      const imageContent = await Bun.file(imagePath).text();
+      const lines = imageContent.split("\n");
+
+      const image_width = Math.max(...lines.map(l => l.length));
+      const image_height = lines.length;
+
+      const [x, y] = frontmatter.image_position.split(',').map(s => parseInt(s.trim()));
+
+      const box = new BoxRenderable(this.renderer, {
+        position: "absolute",
+        left: x,
+        top: y,
+        width: image_width + 2,
+        height: image_height + 2,
+        zIndex: -1, // Behind all other content
+      });
+
+      const text = new TextRenderable(this.renderer, {
+        content: imageContent,
+      });
+
+      box.add(text);
+      this.renderer.root.add(box);
+    } catch (error) {
+      console.error(`Failed to load background image: ${element.filename}`, error);
     }
   }
 

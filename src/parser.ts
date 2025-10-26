@@ -34,6 +34,7 @@ export type SlideElement = Heading | Text | BulletList | Image | Link;
 export interface SlideFrontmatter {
   font?: string;
   align?: "left" | "center" | "right";
+  image_position?: string; // Format: "x,y" for absolute positioning
 }
 
 export interface Slide {
@@ -133,7 +134,7 @@ function parseSlide(markdown: string): Slide | null {
       for (let i = fmStart + 1; i < endIndex; i++) {
         const line = lines[i].trim();
         if (line === "") continue;
-        const match = line.match(/^(\w+):\s*(.+)$/);
+        const match = line.match(/^([\w-]+):\s*(.+)$/);
         if (match) {
           const key = match[1];
           const value = match[2];
@@ -141,6 +142,8 @@ function parseSlide(markdown: string): Slide | null {
             frontmatter.font = value;
           } else if (key === "align") {
             frontmatter.align = value as "left" | "center" | "right";
+          } else if (key === "image-position" || key === "image_position") {
+            frontmatter.image_position = value;
           }
         }
       }
