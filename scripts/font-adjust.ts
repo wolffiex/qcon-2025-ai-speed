@@ -41,7 +41,11 @@ function visualize_character(
 
   // Show boundary markers (only if width is positive)
   if (width > 0) {
-    const pre = " ".repeat(left - context_left + 1); // +1 for the | border
+    // Position carets to align with the character content
+    // We need (left - context_left) spaces to reach the character position,
+    // then +1 more to account for the opening "|" border
+    const spaces_before_carets = left - context_left + 1;
+    const pre = " ".repeat(spaces_before_carets);
     console.log(`${pre}${"^".repeat(width)}`);
   } else {
     console.log("  ⚠️  ERROR: Character boundaries are invalid (right < left)");
