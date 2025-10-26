@@ -356,6 +356,39 @@ export class PresentationRenderer {
 
         return { nextY: y + 2 };
       }
+
+      case "card": {
+        // Create ASCII box around the card content
+        const content_length = element.content.length;
+        const box_width = content_length + 4;
+
+        const top_border = "╔" + "═".repeat(content_length + 2) + "╗";
+        const content_line = "║ " + element.content + " ║";
+        const bottom_border = "╚" + "═".repeat(content_length + 2) + "╝";
+
+        const card_content = [top_border, content_line, bottom_border].join("\n");
+
+        // Center the card horizontally
+        const card_left = Math.floor((this.renderer.width - box_width) / 2);
+
+        const box = new BoxRenderable(this.renderer, {
+          position: "absolute",
+          left: card_left,
+          top: y,
+          width: box_width + 2,
+          height: 5,
+          zIndex: 1,
+        });
+
+        const text = new TextRenderable(this.renderer, {
+          content: card_content,
+        });
+
+        box.add(text);
+        this.renderer.root.add(box);
+
+        return { nextY: y + 5 };
+      }
     }
   }
 

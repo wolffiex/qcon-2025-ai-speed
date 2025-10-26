@@ -422,6 +422,51 @@ Check out [this link](https://example.com)`;
     });
   });
 
+  describe("card parsing", () => {
+    test("parses card syntax", () => {
+      const markdown = `# Title
+
+:::card
+Episode I 🎯
+:::`;
+      const slides = parsePresentation(markdown);
+
+      expect(slides[0].elements).toHaveLength(1);
+      expect(slides[0].elements[0]).toEqual({
+        type: "card",
+        content: "Episode I 🎯",
+      });
+    });
+
+    test("parses card with multiple lines (uses last non-empty)", () => {
+      const markdown = `# Title
+
+:::card
+Episode I 🎯
+:::`;
+      const slides = parsePresentation(markdown);
+
+      expect(slides[0].elements[0]).toEqual({
+        type: "card",
+        content: "Episode I 🎯",
+      });
+    });
+
+    test("parses card without title", () => {
+      const markdown = `:::card
+Episode I 🎯
+:::`;
+      const slides = parsePresentation(markdown);
+
+      expect(slides[0].title).toBe("");
+      expect(slides[0].elements).toHaveLength(1);
+      expect(slides[0].elements[0]).toEqual({
+        type: "card",
+        content: "Episode I 🎯",
+      });
+    });
+  });
+
   describe("complex scenarios", () => {
     test("parses slide with mixed content", () => {
       const markdown = `# Main Title

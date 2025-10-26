@@ -29,7 +29,12 @@ export interface BulletList {
   items: Array<Text | Link>[];
 }
 
-export type SlideElement = Heading | Text | BulletList | Image | Link;
+export interface Card {
+  type: "card";
+  content: string;
+}
+
+export type SlideElement = Heading | Text | BulletList | Image | Link | Card;
 
 export interface SlideFrontmatter {
   font?: string;
@@ -162,6 +167,37 @@ function parseSlide(markdown: string): Slide | null {
         currentSlide.elements.push(currentBulletList);
         currentBulletList = null;
       }
+      continue;
+    }
+
+    // Card syntax: :::card
+    if (trimmed === ":::card") {
+      // Look for the next non-empty line for content
+      let cardContent = "";
+      let j = i + 1;
+      while (j < lines.length) {
+        const cardLine = lines[j].trim();
+        if (cardLine === ":::") {
+          // Found closing marker
+          i = j; // Skip to closing marker
+          break;
+        }
+        if (cardLine !== "") {
+          cardContent = cardLine;
+        }
+        j++;
+      }
+
+      if (!currentSlide) {
+        currentSlide = { title: "", elements: [], frontmatter };
+      }
+
+      if (currentBulletList) {
+        currentSlide.elements.push(currentBulletList);
+        currentBulletList = null;
+      }
+
+      currentSlide.elements.push({ type: "card", content: cardContent });
       continue;
     }
 

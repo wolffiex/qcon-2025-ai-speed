@@ -65,13 +65,11 @@ Three war stories:
 
 ---
 
----
-font: ansishadow
-align: center
----
-# Episode 1:\nVirtualizing\nInput
+:::card
+Episode I 🎯
+:::
 
----
+# Virtualizing Input
 
 ## The Problem
 
@@ -91,7 +89,6 @@ align: center
 ## The Decision
 
 > "We're building a text entry tool.
-> It starts with text entry.
 > Move everything inside JavaScript."
 
 **December 16, 2024:** Build virtual Cursor class
@@ -194,7 +191,11 @@ const offset = text.indexOf(wrappedLine)  // Breaks!
 
 ---
 
-# Episode 2: Shell Implementation 🐚
+:::card
+Episode II 🐚
+:::
+
+# Shell Implementation 🐚
 
 ## The Setup
 
@@ -350,7 +351,11 @@ source /snapshot.sh && eval "$COMMAND"
 
 ---
 
-# Episode 3: Unshipping SQLite 🗄️
+:::card
+Episode III 🗄️
+:::
+
+# Unshipping SQLite
 
 ## The Real Motivation
 
