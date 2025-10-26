@@ -6,7 +6,13 @@ const rl = readline.createInterface({
 });
 
 console.log("=== Simple Readline Demo ===");
-console.log("Type your name and press Enter\n");
+console.log("\nStandard readline shortcuts:");
+console.log("   • Ctrl+A, Ctrl+E     - Start/end of line");
+console.log("   • Ctrl+K, Ctrl+U     - Kill to end/start");
+console.log("   • Ctrl+W, Alt+D      - Delete word");
+console.log("   • Alt+F, Alt+B       - Forward/back word");
+console.log("   • ...plus ~20 more operations");
+console.log("\nType your name and press Enter (try the shortcuts above!)\n");
 
 rl.question("What is your name? ", (name) => {
   console.log(`\nHello, ${name}!`);
