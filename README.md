@@ -1,211 +1,142 @@
-# Terminal Presentation System
+# Engineering at AI Speed
 
-A terminal-based presentation system with ASCII art support, live code execution, and tmux integration.
+![Engineering at AI Speed](static/title.png)
 
-## Getting Started
+Lessons from the First Agentically Accelerated Software Project
+
+**QCon San Francisco 2025**
+[Conference Session](https://qconsf.com/presentation/nov2025/engineering-ai-speed-lessons-first-agentically-accelerated-software-project)
+
+---
+
+## About This Repository
+
+This repository contains the presentation materials and live demos for the talk "Engineering at AI Speed: Lessons from the First Agentically Accelerated Software Project."
+
+The talk draws from our experience building [Claude Code](https://claude.com/claude-code), Anthropic's CLI for AI-assisted development—the first AI coding agent built using itself. **90% of Claude Code's code was written with or by Claude Code**, giving us unique insights into what it means to work at AI speed.
+
+## Core Thesis
+
+> **AI gives you velocity. You provide direction.**
+
+Engineering at AI speed isn't about writing code faster—it's about asking "why?" better.
+
+## The Three Stories
+
+We explore three modules from Claude Code's development that had wildly different outcomes:
+
+### 🎯 Cursor: Going Deep (333 → 945 lines)
+
+Built a custom text input engine because libraries couldn't intercept `/` and `@` characters. Shipping revealed unexpected Unicode complexity: normalization, CJK width, grapheme clusters. Achieved 362x performance improvement through lazy evaluation.
+
+**Pattern:** Domain reality demanded going deep
+
+### 🐚 Shell: Going Broad (773 → 4,109 lines)
+
+Evolved through three phases as real needs emerged: sequential → parallel execution, bare shell → user environment snapshots, and production requirements including 3,293 lines of security code.
+
+**Pattern:** User workflows kept expanding requirements
+
+### 🗄️ SQLite: Going Back (500+ → 277 lines in 15 days)
+
+Built a database for migrations we thought we'd need. Five problems emerged: wrong availability tradeoff, native dependencies, locking issues, migration failures, and version skew. The irony: intended to solve coordination, became the liability. Replaced with simple JSONL.
+
+**Pattern:** Second-order effects revealed wrong direction
+
+## Key Takeaways
+
+### The Shift in Constraints
+
+**Before AI:** Implementation cost forced careful planning → constraint = quality gate
+**With AI:** Implementation is cheap → removed constraint = removed gate
+
+**Implication:** Judgment must replace what implementation cost used to provide
+
+### Three Types of Unknowns
+
+1. **Domain constraints** you didn't know existed (Cursor: Unicode normalization)
+2. **User workflows** you didn't model (Shell: aliases, security needs)
+3. **Second-order effects** you didn't anticipate (SQLite: version skew)
+
+### Earned Complexity
+
+Simple ≠ fewer lines
+Simple = complexity earned by requirements
+
+- **Cursor: 945 lines = simple** (Unicode demands it)
+- **Shell: 4,109 lines = simple enough** (users need it)
+- **SQLite: 500+ lines = not simple** (nothing earned it)
+
+## Running the Presentation
+
+This presentation uses a custom terminal-based presentation system with live code demos.
 
 ```bash
 bun install
 bun src/presentation.ts
 ```
 
-## Markdown Format
+### Navigation
 
-Presentations are written in a custom markdown format stored in `static/presentation.md`.
+- **Arrow Keys (←/→):** Navigate between slides
+- **Arrow Keys (↑/↓):** Select interactive links
+- **Enter:** Activate links (run demos, open URLs)
 
-### Slide Structure
+### Live Demos
 
-Each slide begins with an H1 heading (`#`). Everything following the H1 until the next H1 is part of that slide.
+The presentation includes interactive demos that run in tmux:
 
-```markdown
-# Slide Title
+- `demos/cursor-*.ts` - Text input and Unicode handling
+- `demos/shell-*.ts` - Command execution and environment management
+- `demos/sqlite-*.ts` - Database complexity and migration issues
+- `demos/simple-storage.ts` - The simple JSONL replacement
 
-Content goes here...
-
-# Next Slide
-
-More content...
-```
-
-### Supported Elements
-
-#### Headings
-
-- **H1** (`#`): Creates a new slide with the title
-- **H2** (`##`): Section heading within a slide
-- **H3** (`###`): Subsection heading within a slide
-
-```markdown
-# Main Slide Title
-
-## Section Heading
-
-### Subsection Heading
-```
-
-#### Text
-
-Regular paragraphs are rendered as plain text:
-
-```markdown
-This is regular text on the slide.
-```
-
-#### Bullet Lists
-
-Use `-` or `*` to create bullet points:
-
-```markdown
-- First bullet point
-- Second bullet point
-- Third bullet point
-```
-
-#### Links
-
-Standard markdown links can be used for interactive elements:
-
-```markdown
-[Click me](https://example.com)
-```
-
-Links can also be embedded in bullet points:
-
-```markdown
-- This is a [clickable link](https://example.com) in a bullet
-```
-
-#### Images (ASCII Art)
-
-Use standard markdown image syntax to embed ASCII art files from the `static/` directory:
-
-```markdown
-![description](filename.txt)
-```
-
-The system will load the contents of `static/filename.txt` and render it in the slide.
-
-Example:
-```markdown
-![helicopter](heli.txt)
-```
-
-### Tmux Integration
-
-Special `tmux://` URLs allow you to execute commands in tmux panes:
-
-```markdown
-[Run demo](tmux://pane-name/command to run)
-```
-
-**Format:** `tmux://[pane-name]/[command]`
-
-- `pane-name`: The target tmux pane or window name
-- `command`: The command to execute
-
-**Examples:**
-
-```markdown
-- [Run tests](tmux://test/bun test)
-- [Build project](tmux://build/bun run build)
-- [Clear screen](tmux://main/clear)
-- [Run script](tmux://demo/bun src/demo.ts)
-```
-
-When you press Enter on a tmux link:
-1. The system checks if the pane exists
-2. If not, it creates a new window with that name
-3. It sends the command to the pane
-
-## Keyboard Navigation
-
-- **Left Arrow** (`←`): Previous slide
-- **Right Arrow** (`→`): Next slide
-- **Up Arrow** (`↑`): Navigate to previous link
-- **Down Arrow** (`↓`): Navigate to next link
-- **Enter** (`↵`): Activate selected link (opens URL or executes tmux command)
-
-## Features
-
-### Visual Styling
-
-- Dark terminal theme with custom colors
-- Highlighted links that change color when selected
-- Emoji support throughout
-- Proper spacing and layout
-
-### Link Highlighting
-
-- Links are highlighted with a dark blue background (`#16213e`)
-- The currently selected link has a red/pink highlight (`#e94560`)
-- Navigate between links using arrow keys
-
-### ASCII Art Support
-
-Place ASCII art files in the `static/` directory and reference them in your presentation:
+## Repository Contents
 
 ```
-static/
-  ├── presentation.md
-  ├── heli.txt
-  ├── border1.txt
-  └── ... other art files
+content/
+├── src/               # Presentation system implementation
+├── static/            # Presentation content and ASCII art
+│   ├── presentation.md        # Main slide deck
+│   ├── presentation-notes.md  # Speaker notes
+│   └── *.txt                  # ASCII art assets
+├── demos/             # Live code demonstrations
+└── docs/              # Technical documentation
+    └── markdown.md    # Presentation system docs
 ```
 
-### Live Code Execution
+## The Framework We Built
 
-Using tmux integration, you can:
-- Run demos during your presentation
-- Execute tests live
-- Start/stop services
-- Show real-time command output
+The presentation itself runs on a custom terminal-based presentation system we built for this talk. It features:
 
-## Example Presentation
+- Markdown-based slide format
+- ASCII art rendering
+- Live code execution via tmux integration
+- Interactive navigation
 
-```markdown
-# Welcome to My Talk 🎨
+For technical details about the presentation framework, see [docs/markdown.md](docs/markdown.md).
 
-This is the introduction slide.
+## Three Questions to Ask Yourself
 
-## Overview
+When engineering at AI speed:
 
-- Point one
-- Point two with a [demo link](tmux://demo/bun src/demo.ts)
-- Point three
+1. **What will shipping reveal that planning can't?**
+   Domain constraints, user workflows, second-order effects
 
-# Demo Slide
+2. **Is this complexity earned by reality?**
+   Does something break without it?
 
-Check out this ASCII art:
+3. **Am I iterating toward or away from simple?**
+   Complexity should decrease as understanding increases
 
-![cool art](art.txt)
+## Contact
 
-## Try It
+**Adam Wolff**
+Member of Technical Staff, Anthropic
 
-[Run the code](tmux://main/bun run example)
+- Twitter/X: [@wolffiex](https://twitter.com/wolffiex)
+- GitHub: [wolffiex](https://github.com/wolffiex)
 
-# Thank You! 🎉
+## License
 
-Questions?
-```
-
-## Architecture
-
-- **Parser** (`src/parser.ts`): Parses markdown into slide objects
-- **Renderer** (`src/renderer.ts`): Renders slides using OpenTUI
-- **Presentation** (`src/presentation.ts`): Main application with keyboard handling
-
-## Requirements
-
-- Bun runtime
-- tmux (for interactive command execution)
-- Terminal with emoji support (for best experience)
-
-## Tips
-
-1. Keep slides concise - terminal real estate is limited
-2. Use ASCII art sparingly for visual interest
-3. Test tmux links to ensure pane names and commands work
-4. Emojis work great for visual flair
-5. Use links to make presentations interactive
-
----
+This presentation and demo code are provided for educational purposes.
