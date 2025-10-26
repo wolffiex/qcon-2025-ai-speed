@@ -35,7 +35,7 @@ export class Font {
   private char_cache: Map<string, CharMetadata>;
 
   constructor(font_name: string) {
-    const base_path = join("src/fonts", font_name);
+    const base_path = join("static/fonts", font_name);
 
     // Load metadata
     const metadata_path = `${base_path}.json`;
@@ -203,7 +203,7 @@ export class Font {
  */
 export function list_fonts(): string[] {
   const { readdirSync } = require("fs");
-  const files = readdirSync("src/fonts");
+  const files = readdirSync("static/fonts");
   return files
     .filter((f: string) => f.endsWith(".json"))
     .map((f: string) => f.replace(".json", ""));
