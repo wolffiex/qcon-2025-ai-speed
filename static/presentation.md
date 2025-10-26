@@ -101,6 +101,12 @@ Three war stories:
 
 ## Initial Implementation
 
+**Before: Using readline library**
+
+[Demo: Basic readline](tmux://main/bun demos/node-readline.ts)
+
+**After: Virtual cursor class**
+
 ```typescript
 class Cursor {
   left(): Cursor
@@ -436,8 +442,11 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 
 **3. Weird Locking**
 - Database-level locking (not row/table)
-- Read operations fail if write lock held
-- Unexpected for most developers
+- EXCLUSIVE locks block ALL operations, even reads
+- Unexpected for developers expecting row/table locking
+- WAL mode helps but adds complexity
+
+[Demo: Locking behavior](tmux://main/bun demos/sqlite-multiprocess.ts)
 
 **4. Migration Nightmares**
 - Forgot `ON DELETE CASCADE` in schema
@@ -463,7 +472,8 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 **From Slack:**
 > "The biggest multiprocess problems we've had stem from the database itself"
 
-[Show version skew](tmux://main/bun demos/sqlite-version-skew.ts)
+[Demo: Version skew crash](tmux://main/bun demos/sqlite-version-skew-real.ts)
+[Demo: Concurrent load testing](tmux://main/bun demos/sqlite-multiprocess-real.ts)
 
 **Intended to solve coordination → became the liability**
 
