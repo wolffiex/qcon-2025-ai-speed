@@ -87,7 +87,7 @@ events.forEach(({ date, time, event, details, mood }) => {
   console.log(`  ${mood}\n`);
 });
 
-console.log("=" . repeat(60));
+console.log("=".repeat(60));
 console.log("\n📊 Summary:\n");
 
 const stats = {

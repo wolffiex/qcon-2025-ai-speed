@@ -6,6 +6,22 @@ Lessons from the First Agentically Accelerated Software Project
 
 ---
 
+## The Unique Context
+
+**Claude Code** - Anthropic's CLI for AI-assisted development
+
+**First of its kind:**
+- First AI coding agent
+- First fully agent-enabled codebase
+- Built using Claude Code itself (dogfooding from day one)
+
+**90% of Claude Code's code is written with or by Claude Code**
+
+**This gives us unique insight:** We didn't just build an AI tool.
+We learned what it's like to work at AI speed.
+
+---
+
 ## The Question
 
 **Three projects. AI made implementation fast.**
@@ -31,6 +47,18 @@ Three war stories:
 
 ---
 
+## The Meta-Pattern
+
+**Watch for these questions in each story:**
+
+1. **Where did the initial assumption break?**
+2. **What did shipping reveal that planning couldn't?**
+3. **How did we know to persist vs back out?**
+
+**These three stories will show different answers to each question**
+
+---
+
 # Episode 1: Virtualizing Input 🎯
 
 ## The Problem
@@ -44,7 +72,7 @@ Three war stories:
 
 **Problem:** Libraries don't let us intercept everything
 - Black box input handling
-- Can't implement `/` or `@` inception
+- Can't intercept `/` or `@` before processing
 
 ---
 
@@ -119,38 +147,15 @@ const offset = text.indexOf(wrappedLine)  // Breaks!
 
 ---
 
-## The Performance Problem
+## The Performance Cliff
 
-**September 2025:** Users report lag
+**Problem:** 2.9s per keystroke (recomputed everything)
 
-**Root cause:**
-```
-Each keystroke: 2.9 seconds
-wrapAnsi overhead: 66.2% of runtime
-```
+**Fix:** Lazy evaluation (compute on demand)
 
-Every keystroke recomputed everything
+**Result:** 2.9s → 8ms (362x faster)
 
----
-
-## The Fix
-
-**Lazy evaluation:**
-```typescript
-// Compute on demand, not upfront
-get graphemes() {
-  if (!this._graphemes) {
-    this._graphemes = this.computeGraphemes()
-  }
-  return this._graphemes
-}
-```
-
-**Result:**
-- Typing: 2.9s → 8ms (362x faster)
-- Wrapped text only computed when needed
-
-[Show performance demo](tmux://main/bun demos/cursor-performance.ts)
+[Demo](tmux://main/bun demos/cursor-performance.ts)
 
 ---
 
@@ -258,53 +263,32 @@ source /snapshot.sh && eval "$COMMAND"
 
 ## The Delivery Challenge
 
-**Tried 4 approaches:**
+**Problem:** How to get snapshot to each command?
 
-1. ✅ Files → Works
-2. ❌ In-memory (`source <(cat)`) → EPIPE errors
-3. ❌ Via stdin → E2BIG errors
-4. ✅ Back to files → Wins
+**Tried:** In-memory (`source <(cat)`), stdin, temp files
 
-**Learning:** Simple beats clever
+**Winner:** Temp files (simple beats clever)
 
 [Demo: Snapshot iteration](tmux://main/bun demos/shell-snapshot.ts)
 
 ---
 
-# Phase 3: Production Challenges
+# Phase 3: Production Reality
 
-## State Management Challenge
+**State management is subtle:**
+- What persists? (CWD yes, env vars no)
+- How to isolate agents?
+- Login vs interactive shells?
 
-**Three questions:**
-
-1. **Performance:** `-l` flag slow (100-500ms)
-   - Solution: Snapshot captures once, skip `-l` on commands
-
-2. **Persistence:** What state carries over?
-   - CWD: Yes (users need it)
-   - Env vars: No (matches real shell)
-   - Agent isolation: Yes (prevent interference)
-
-3. **Compatibility:** Login vs interactive shells
-   - Balance: Capture everything, stay clean
-   - Every user's setup different
-
-**Learning:** State in dev environments is subtle
-
----
-
-## Security Requirements (August 2025+)
-
-Users: "Control network access"
-
-**Added: 3,293 lines of sandbox code**
-- Network sandboxing (Mac/Linux different approaches)
-- Filesystem permissions
-- SOCKS proxy for interception
+**Security requirements emerged:**
+- Users: "I don't want Claude accessing internet without asking"
+- Platform-specific sandboxing (macOS sandbox-exec vs Linux LD_PRELOAD)
+- Proxy layers, policy management
+- 3,293 lines of security code
 
 **Total: 773 → 4,109 lines** (5.3x growth)
 
-[Demo: Sandbox](tmux://main/bun demos/shell-sandbox.ts)
+**Learning:** Production reveals needs planning can't predict
 
 ---
 
@@ -338,6 +322,16 @@ Users: "Control network access"
 
 ---
 
+## The Question
+
+**Cursor and Shell both grew:**
+- 333 → 945 lines
+- 773 → 4,109 lines
+
+**But what about when growth itself is the mistake?**
+
+---
+
 # Episode 3: Unshipping SQLite 🗄️
 
 ## The Real Motivation
@@ -360,340 +354,167 @@ Users: "Control network access"
 
 ---
 
-# The Timeline: A 3-Week Journey
+# The 15-Day Journey
 
-## Day 1 (April 24, 2025)
+## Launch (April 24)
 
-**Morning:** Merged database implementation (#2027)
+Merged database implementation with beautiful schema:
+- Foreign keys, table inheritance, type safety
+- Everything you'd want in a "professional" solution
 
-```typescript
-// Beautiful schema with proper relationships
-const baseMessages = sqliteTable('base_messages', {
-  uuid: text('uuid').primaryKey(),
-  parentUuid: text('parent_uuid'),
-  // ...
-}, table => ({
-  parentReference: foreignKey({
-    columns: [table.parentUuid],
-    foreignColumns: [table.uuid],
-  }),
-}))
-```
+**Hours later:** Emergency revert (file path issue)
 
-**Features:**
-- Parent-child relationships for conversation forks
-- Table inheritance (base_messages → user/assistant_messages)
-- Drizzle ORM for type safety
-- Proper foreign keys for data integrity
+**That evening:** Re-merged (second try)
 
-**Afternoon (hours later):** Emergency revert! (#2204)
-> "Due to relative file path issue"
-
-**Evening:** Second try merged (#2211)
-
-[Show SQLite schema](tmux://main/bun demos/sqlite-before.ts)
+[Show schema](tmux://main/bun demos/sqlite-before.ts)
 
 ---
 
-# Day 7 (April 30)
+## Trouble (Days 7-10)
 
-## First Cracks Appear
+**Day 7:** Install failures (native dep issues)
+- Try auto-rebuild
 
-**Problem:** Users can't install CLI
+**Day 9:** Make it "gracefully optional"
+- Database causing more problems than solving
+- Continue/resume disabled if unavailable
 
-```bash
-$ npm install
-...
-Error: Cannot find module 'better-sqlite3'
-node-pre-gyp: Failed to find prebuilt binary
-```
+**Day 10:** Add warnings to Doctor output
 
-**Fix attempt:** Auto-rebuild on failure (#2400)
-
-```typescript
-try {
-  const betterSqlite = new BetterDatabase(getDbPath())
-  return betterDrizzle(betterSqlite, { schema })
-} catch (error) {
-  // Try to rebuild better-sqlite3
-  execSync('npm rebuild better-sqlite3')
-  // Try again...
-}
-```
-
-**Quote from PR:**
-> "For some versions of node (especially older versions of node v18)
-> the prebuilt binaries for better-sqlite3 are not available"
+**"Optional" = writing on the wall**
 
 ---
 
-# Day 9 (May 2)
+## Decision (Day 15)
 
-## Make It Optional
+Slack post: "The beginning of the end for our brief but painful misadventure"
 
-**Realization:** Database is causing more problems than solving
+[Show timeline](tmux://main/bun demos/sqlite-timeline.ts)
 
-**PR #2513:** "Make SQLite database support gracefully optional"
-
-```typescript
-export function isDatabaseEnabled(): boolean {
-  return initializeDatabase() != null
-}
-
-// All database functions now check:
-if (!db) {
-  return [] // Fail gracefully
-}
-```
-
-**Quote:**
-> "Users with better-sqlite3 dependency issues can still use
-> core CLI features. Continue/resume features disabled when
-> database unavailable."
-
-**The writing on the wall:** "Optional" usually means "dying"
+**15 days from launch to removal**
 
 ---
-
-# Day 10 (May 3)
-
-## Add Warnings
-
-**PR #2541:** Warn users when database unavailable
-
-Added to "Doctor" diagnostic output:
-```
-⚠️  Database unavailable - continue/resume disabled
-```
-
-**This is damage control**
-
----
-
-# Day 15 (May 8): The Unshipping
-
-## The Slack Post
-
-From your message (reproduced in thread):
-
-> "#2741 is the beginning of the end for our brief but painful
-> misadventure with SQLite."
 
 ## Five Reasons It Had To Go
 
-### 1. Availability > Consistency
+**1. Availability > Consistency**
+- Robinhood: Crash on bad data
+- Claude Code: Crashing IS worst outcome
 
-> "If you're a financial firm, crash on data inconsistency.
-> For Claude Code, crashing IS the worst outcome."
+**2. Native Dependency Hell**
+- pnpm can't handle them
+- Install failures everywhere
 
-- Model is adaptive - better to keep running
-- Users can't recover from crashes
-- Data perfection < availability
+**3. Weird Locking**
+- Database-level (not row/table)
+- Read fails if write lock held
 
-### 2. Native Dependency Hell
-
-The npm ecosystem & native deps don't mix:
-- pnpm basically doesn't handle them
-- Users hit installation issues constantly
-- Moving to single-file executable (Bun)
-- Didn't want to pressurize that migration
-
-### 3. SQLite's Weird Locking
-
-- No row or table-level locking
-- Read throws if anyone holds write lock
-- Not what you expect from a "database"
-
-[Show locking demo](tmux://main/bun demos/sqlite-locking.ts)
-
-### 4. Migration Nightmares
-
-**Real story:** Forgot `ON DELETE CASCADE` on foreign keys
-
-```sql
--- Original schema (April 24)
-CREATE TABLE base_messages (
-  uuid TEXT PRIMARY KEY,
-  parent_uuid TEXT,
-  FOREIGN KEY (parent_uuid) REFERENCES base_messages(uuid)
-  -- MISSING: ON DELETE CASCADE
-);
-```
-
-**The problem:**
+**4. Migration Nightmares**
+- Forgot `ON DELETE CASCADE`
 - Can't modify constraints in SQLite
-- Have to recreate table with correct constraints
-- Requires careful data migration
-
-**What happened:**
-- Wrote migration to fix it
-- Resulted in data loss
-- "Still don't fully understand why" (from Slack)
-
-**Quote from you:**
-> "When I originally specified the foreign key constraints on the
-> table inheritance for messages, I forgot to set ON DELETE CASCADE.
-> I tried to write a migration to do this, but it resulted in data
-> loss for reasons I still don't totally understand."
-
-**With AI speed:** You ship these mistakes before you learn
-
-[Show migration disaster](tmux://main/bun demos/sqlite-migration.ts)
-
-### 5. The Multiprocess Irony
-
-**Original intent:** Database makes multiprocess safer
-- Transactions for consistency
-- Locking for coordination
-- Safe concurrent access
-
-**Reality:** Database made multiprocess MORE dangerous
-
-**The version skew problem:**
-```
-User's machine:
-- Terminal 1: Claude Code v1.5 (schema v3)
-- Terminal 2: Claude Code v1.6 (schema v4)
-- Both trying to read/write same database
-- v1.6 writes new schema → v1.5 crashes reading it
-```
-
-[Show version skew scenario](tmux://main/bun demos/sqlite-version-skew.ts)
-
-**Quote from you (Slack):**
-> "I was hopeful that SQLite would be useful for general
-> multiprocess concurrency. When I asked @lev to consider
-> using the db, he pointed out some tricky gotchas with
-> SQLite and went with better-lockfile instead. When
-> designing enhancements to the auto-updater, I realized
-> that having it depend on the db for safe multiprocess
-> concurrency was a huge liability--the biggest multiprocess
-> problems we've had stem from the database itself."
-
-**The irony:**
-- Intended to solve multiprocess coordination
-- Actually became the biggest multiprocess liability
-- Colleague explicitly avoided it for multiprocess needs
-
-## The Unshipping (May 8, PR #2741)
-
-**PR title:** "Replace SQLite database with file-based session storage"
-
-**What replaced it:**
-
-```typescript
-// New: Simple session storage (277 lines)
-class Project {
-  private sessions = new Map<UUID, Session>()
-
-  loadSession(uuid: UUID): Message[] {
-    const file = `~/.claude/projects/{name}/{uuid}.jsonl`
-    return file.readLines().map(JSON.parse)
-  }
-
-  saveMessage(msg: Message) {
-    fs.appendFileSync(file, JSON.stringify(msg) + '\n')
-  }
-}
-```
-
-**Benefits:**
-- No native dependencies
-- Human-readable (JSONL)
-- No locking issues
-- Easy to debug
-- Works everywhere
-
-[Show simple alternative](tmux://main/bun demos/simple-storage.ts)
+- Migration caused data loss
+- "Still don't fully understand why"
 
 ---
 
-# Episode 3: What Happened
+## The Killer Issue: Multiprocess Irony
 
-[Show complete timeline](tmux://main/bun demos/sqlite-timeline.ts)
+**Intent:** Make multiprocess safer (transactions, locking)
 
-## The Stats
+**Reality:** Made it MORE dangerous (version skew)
 
+**The scenario:**
+- Terminal 1: v1.5 (schema v3)
+- Terminal 2: v1.6 (schema v4) ← auto-updated
+- v1.6 writes new schema → v1.5 crashes
+
+**From Slack:**
+> "The biggest multiprocess problems we've had stem from the database itself"
+
+[Show version skew](tmux://main/bun demos/sqlite-version-skew.ts)
+
+**Intended to solve coordination → became the liability**
+
+---
+
+## The Replacement
+
+500+ lines of database → 277 lines of JSONL
+
+```typescript
+// Simple session storage
+fs.appendFileSync(file, JSON.stringify(msg) + '\n')
 ```
-April 24:  Database added (reverted same day)
-April 25:  Re-added (second try)
-April 30:  First fixes (7 days)
-May 2:     Made optional (9 days)
-May 8:     Removed (15 days total)
 
-Lifespan: 2 weeks of being "required"
-         3 weeks total before removal
-```
+No dependencies. No locking. Works everywhere.
 
-## The Pattern
-
-**Day 1:** Excited about "proper" architecture
-**Day 7:** Fighting build issues
-**Day 9:** Making it optional (death sentence)
-**Day 15:** Complete removal
-
-## What Made It Different?
-
-**Cursor & Shell:** Iterated to success
-- Found the right approach
-- Solved real problems
-- Code grew to meet needs
-
-**SQLite:** Iterated to removal
-- Fast addition enabled by AI
-- Fast removal enabled by AI
-- **The hard part: Knowing when to quit**
+[Show alternative](tmux://main/bun demos/simple-storage.ts)
 
 ---
 
 # Three Lessons 🎓
 
----
-
-# Lesson 1: Fast Iteration Reveals True Requirements
-
-## The Pattern Across All Three
-
-Notice: **All three started with reasonable-sounding decisions**
-
-- Cursor: "Just use readline"
-- Shell: "Just exec() each command"
-- SQLite: "Use a proper database"
-
-**All three initial instincts were wrong**
-
-You can't know until you ship.
+**Cursor and Shell iterated to success. SQLite iterated to removal. What patterns emerge?**
 
 ---
 
-## What Shipping Revealed
+# Lesson 1: Shipping Reveals Three Types of Unknowns
 
-**Cursor:** Domain was harder than expected
-- Unicode normalization, CJK width, grapheme clusters
-- Each discovered through user reports
+## Type 1: Domain Constraints You Didn't Know Existed
+
+**Cursor:** "Unicode is hard" → café ≠ café (NFD vs NFC)
+
+**What planning can't reveal:**
+- Normalization, CJK width, grapheme clusters
+- Only discovered through user reports
 - 333 → 945 lines (complexity earned)
 
-**Shell:** Requirements kept emerging
-- Parallelism, user env, state, security
-- Each discovered through usage
+**Pattern:** Go deep when domain reality demands it
+
+---
+
+## Type 2: User Workflows You Didn't Model
+
+**Shell:** "Just spawn commands" → Users need aliases
+
+**What requirements docs miss:**
+- Parallelism, user environment, state persistence, security
+- Each need emerged from real usage
 - 773 → 4,109 lines (breadth earned)
 
-**SQLite:** Direction was wrong
+**Pattern:** Stay flexible, iterate broad
+
+---
+
+## Type 3: Second-Order Effects You Didn't Anticipate
+
+**SQLite:** "Database for migrations" → Version skew causes crashes
+
+**What first-order thinking misses:**
+- Intended to solve coordination, became the liability
 - Install failures, locking, version skew
-- Discovery: We don't need this
 - 500+ → 277 lines (simplicity earned)
+
+**Pattern:** Recognize wrong direction, back out fast
 
 ---
 
 ## The Shift
 
-**Before AI:** Slow iteration → design upfront
+**Before AI:** Implementation cost forced careful planning
+  ↓
+Slow to ship wrong things (constraint = quality gate)
 
-**With AI:** Fast iteration → learn by shipping
+**With AI:** Implementation is cheap
+  ↓
+Fast to ship wrong things (removed constraint = removed gate)
 
-**New risk:** Ship mistakes before learning
+**The shift:** Implementation was a forcing function for good design.
+Now judgment must replace what implementation cost used to provide.
 
-**New skill:** Recognize wrong direction faster
+**New risk:** Ship mistakes before learning (SQLite Day 1)
+
+**New skill:** Recognize wrong direction faster (SQLite Day 15)
 
 ---
 
@@ -881,14 +702,30 @@ Learn if it's right
 >
 > It's about asking "why?" better.
 
-**Three questions to always ask:**
+**Three questions to ask yourself:**
 
-1. **Why this solution?** (Requirements inform solutions)
-2. **Why this complexity?** (Must be earned)
-3. **Why keep iterating?** (Know when to stop/pivot)
+**1. What will shipping reveal that planning can't?**
+- Domain constraints (café ≠ café)
+- User workflows (need aliases)
+- Second-order effects (version skew)
 
-**AI gives you velocity**
-**You provide direction**
+**2. Is this complexity earned by reality?**
+- Cursor: 945 lines ✓ (Unicode demands it)
+- Shell: 4,109 lines ✓ (Users need it)
+- SQLite: 500+ lines ✗ (Nothing earned it)
+
+**3. Am I iterating toward or away from simple?**
+- Cursor: Toward (converged on solution)
+- Shell: Toward (modular growth)
+- SQLite: Away (back out fast)
+
+---
+
+## The Insight
+
+> **AI gives you velocity.**
+>
+> **You provide direction.**
 
 **Questions?**
 
@@ -897,17 +734,50 @@ Learn if it's right
 # Thanks! 🙏
 
 **Engineering at AI Speed**
-Lessons from the Agentically Accelerated Project
+Lessons from the First Agentically Accelerated Project
 
-Contact: [TODO]
-Code: [TODO]
+**Adam Wolffis**
+Staff Software Engineer, Anthropic
+
+Twitter/X: @wolffiex
+Email: adam@anthropic.com
+
+**Demos & Slides:** github.com/wolffiex/qcon-2025-ai-speed
 
 ---
 
-# Appendix: Interactive Demos
+# Backup Slides
 
-[Add live demos here if needed]
+---
 
-- [Demo 1: Cursor virtualization](tmux://main/bun demos/cursor-demo.ts)
-- [Demo 2: Shell execution](tmux://main/bun demos/shell-demo.ts)
-- [Demo 3: State management](tmux://main/bun demos/state-demo.ts)
+## Shell Security Details
+
+**User requirement:** "Control network access"
+
+**What we built (3,293 lines):**
+- Network sandboxing (Mac/Linux different approaches)
+- Filesystem permissions
+- SOCKS proxy for interception
+
+[Demo: Sandbox](tmux://main/bun demos/shell-sandbox.ts)
+
+---
+
+## Shell State Management Details
+
+**Three key questions:**
+
+1. **Performance:** `-l` flag slow (100-500ms)
+   - Solution: Snapshot captures once, skip `-l` on commands
+
+2. **Persistence:** What state carries over?
+   - CWD: Yes (users need it)
+   - Env vars: No (matches real shell)
+   - Agent isolation: Yes (prevent interference)
+
+3. **Compatibility:** Login vs interactive shells
+   - Balance: Capture everything, stay clean
+   - Every user's setup different
+
+**Learning:** State in dev environments is subtle
+
