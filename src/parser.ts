@@ -31,14 +31,20 @@ export interface BulletList {
 
 export type SlideElement = Heading | Text | BulletList | Image | Link;
 
+export interface SlideFrontmatter {
+  font?: string;
+  align?: "left" | "center" | "right";
+}
+
 export interface Slide {
   title: string;
   elements: SlideElement[];
+  frontmatter?: SlideFrontmatter;
 }
 
 export function parsePresentation(markdown: string): Slide[] {
-  // First split on slide separators (---)
-  const slideContents = markdown.split(/\n---\n/);
+  // Split slides while being aware of frontmatter
+  const slideContents = splitSlides(markdown);
   const slides: Slide[] = [];
 
   for (const slideContent of slideContents) {
@@ -51,14 +57,98 @@ export function parsePresentation(markdown: string): Slide[] {
   return slides;
 }
 
+function splitSlides(markdown: string): string[] {
+  const lines = markdown.split("\n");
+  const slides: string[] = [];
+  let currentSlide: string[] = [];
+  let inFrontmatter = false;
+  let frontmatterStart = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Check if this is the start of frontmatter
+    if (trimmed === "---" && currentSlide.length === 0) {
+      inFrontmatter = true;
+      frontmatterStart = i;
+      currentSlide.push(line);
+      continue;
+    }
+
+    // Check if this is the end of frontmatter
+    if (trimmed === "---" && inFrontmatter && i > frontmatterStart) {
+      inFrontmatter = false;
+      currentSlide.push(line);
+      continue;
+    }
+
+    // Check if this is a slide separator (not in frontmatter)
+    if (trimmed === "---" && !inFrontmatter && currentSlide.length > 0) {
+      // End current slide
+      slides.push(currentSlide.join("\n"));
+      currentSlide = [];
+      continue;
+    }
+
+    currentSlide.push(line);
+  }
+
+  // Don't forget the last slide
+  if (currentSlide.length > 0) {
+    slides.push(currentSlide.join("\n"));
+  }
+
+  return slides;
+}
+
 function parseSlide(markdown: string): Slide | null {
   const lines = markdown.trim().split("\n");
   if (lines.length === 0) return null;
 
   let currentSlide: Slide | null = null;
   let currentBulletList: BulletList | null = null;
+  let frontmatter: SlideFrontmatter | undefined;
 
-  for (let i = 0; i < lines.length; i++) {
+  // Check for frontmatter at the beginning
+  let startIndex = 0;
+  const firstLine = lines[0]?.trim();
+
+  // Handle both "---" and empty first line followed by "---"
+  if (firstLine === "---" || (firstLine === "" && lines[1]?.trim() === "---")) {
+    const fmStart = firstLine === "---" ? 0 : 1;
+
+    // Find the closing ---
+    let endIndex = -1;
+    for (let i = fmStart + 1; i < lines.length; i++) {
+      if (lines[i].trim() === "---") {
+        endIndex = i;
+        break;
+      }
+    }
+
+    if (endIndex > 0) {
+      // Parse frontmatter
+      frontmatter = {};
+      for (let i = fmStart + 1; i < endIndex; i++) {
+        const line = lines[i].trim();
+        if (line === "") continue;
+        const match = line.match(/^(\w+):\s*(.+)$/);
+        if (match) {
+          const key = match[1];
+          const value = match[2];
+          if (key === "font") {
+            frontmatter.font = value;
+          } else if (key === "align") {
+            frontmatter.align = value as "left" | "center" | "right";
+          }
+        }
+      }
+      startIndex = endIndex + 1;
+    }
+  }
+
+  for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
 
@@ -76,7 +166,7 @@ function parseSlide(markdown: string): Slide | null {
     if (trimmed.startsWith("# ")) {
       if (!currentSlide) {
         const title = trimmed.substring(2).trim();
-        currentSlide = { title, elements: [] };
+        currentSlide = { title, elements: [], frontmatter };
       } else {
         // Additional H1s are treated as heading elements
         if (currentBulletList) {
@@ -91,7 +181,7 @@ function parseSlide(markdown: string): Slide | null {
 
     // Initialize slide with empty title if no H1 found yet
     if (!currentSlide) {
-      currentSlide = { title: "", elements: [] };
+      currentSlide = { title: "", elements: [], frontmatter };
     }
 
     // H2

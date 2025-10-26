@@ -57,29 +57,77 @@ export class PresentationRenderer {
     // Now make it transparent for the actual content
     bgBox.backgroundColor = "transparent";
 
-    // Title - render with jsstickletters font
-    const font = new Font("jsstickletters");
-    const rendered_title = font.render_to_string(slide.title.toUpperCase());
+    // Determine font and alignment from frontmatter
+    const font_name = slide.frontmatter?.font || "jsstickletters";
+    const alignment = slide.frontmatter?.align || "left";
+
+    // Title - render with specified font
+    // Support \n for explicit line breaks in the title
+    const font = new Font(font_name);
+    const title_parts = slide.title.split('\\n');
+    const rendered_parts = title_parts.map(part =>
+      font.render_to_string(part.toUpperCase())
+    );
+    const rendered_title = rendered_parts.join('\n\n'); // Extra line between parts
     const title_lines = rendered_title.split("\n");
 
-    const titleBox = new BoxRenderable(this.renderer, {
-      position: "absolute",
-      left: 5,
-      top: 2,
-      width: 120,
-      height: title_lines.length + 2,
-      zIndex: 1,
-    });
+    // Calculate vertical position - start at top with border
+    let title_top = 2;
+    if (alignment === "center" && slide.elements.length === 0) {
+      // Vertically center if there's no content
+      title_top = Math.floor((this.renderer.height - title_lines.length) / 2);
+    }
 
-    const titleText = new TextRenderable(this.renderer, {
-      content: rendered_title,
-    });
+    // For centered text, render each line separately at its own horizontal position
+    if (alignment === "center") {
+      const line_positions = title_lines.map(line =>
+        Math.floor((this.renderer.width - line.length) / 2)
+      );
 
-    titleBox.add(titleText);
-    this.renderer.root.add(titleBox);
+      title_lines.forEach((line, index) => {
+        const lineBox = new BoxRenderable(this.renderer, {
+          position: "absolute",
+          left: line_positions[index],
+          top: title_top + index,
+          width: line.length + 2,
+          height: 1,
+          zIndex: 1,
+        });
+
+        const lineText = new TextRenderable(this.renderer, {
+          content: line,
+        });
+
+        lineBox.add(lineText);
+        this.renderer.root.add(lineBox);
+      });
+    } else {
+      // For left/right alignment, use single box
+      let title_left = 5;
+      if (alignment === "right") {
+        const max_line_length = Math.max(...title_lines.map(l => l.length));
+        title_left = this.renderer.width - max_line_length - 5;
+      }
+
+      const titleBox = new BoxRenderable(this.renderer, {
+        position: "absolute",
+        left: title_left,
+        top: title_top,
+        width: 120,
+        height: title_lines.length + 2,
+        zIndex: 1,
+      });
+
+      const titleText = new TextRenderable(this.renderer, {
+        content: rendered_title,
+      });
+
+      titleBox.add(titleText);
+      this.renderer.root.add(titleBox);
+    }
 
     // Content starts after title (accounting for font height)
-    let yOffset = 2 + title_lines.length + 3;
+    let yOffset = title_top + title_lines.length + 3;
 
     for (const element of slide.elements) {
       const result = await this.renderElement(element, 8, yOffset);
