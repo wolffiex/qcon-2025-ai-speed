@@ -63,7 +63,11 @@ Three war stories:
 
 ---
 
-# Episode 1: Virtualizing Input 🎯
+:::card
+Episode I 🎯
+:::
+
+# Virtualizing Input
 
 ## The Problem
 
@@ -83,7 +87,6 @@ Three war stories:
 ## The Decision
 
 > "We're building a text entry tool.
-> It starts with text entry.
 > Move everything inside JavaScript."
 
 **December 16, 2024:** Build virtual Cursor class
@@ -180,7 +183,11 @@ const offset = text.indexOf(wrappedLine)  // Breaks!
 
 ---
 
-# Episode 2: Shell Implementation 🐚
+:::card
+Episode II 🐚
+:::
+
+# Shell Implementation 🐚
 
 ## The Setup
 
@@ -336,7 +343,11 @@ source /snapshot.sh && eval "$COMMAND"
 
 ---
 
-# Episode 3: Unshipping SQLite 🗄️
+:::card
+Episode III 🗄️
+:::
+
+# Unshipping SQLite
 
 ## The Real Motivation
 
