@@ -36,8 +36,24 @@ export interface Slide {
 }
 
 export function parsePresentation(markdown: string): Slide[] {
-  const lines = markdown.split("\n");
+  // First split on slide separators (---)
+  const slideContents = markdown.split(/\n---\n/);
   const slides: Slide[] = [];
+
+  for (const slideContent of slideContents) {
+    const slide = parseSlide(slideContent);
+    if (slide) {
+      slides.push(slide);
+    }
+  }
+
+  return slides;
+}
+
+function parseSlide(markdown: string): Slide | null {
+  const lines = markdown.trim().split("\n");
+  if (lines.length === 0) return null;
+
   let currentSlide: Slide | null = null;
   let currentBulletList: BulletList | null = null;
 
@@ -55,25 +71,27 @@ export function parsePresentation(markdown: string): Slide[] {
       continue;
     }
 
-    // H1 - New slide
+    // H1 - Slide title (first one becomes the title)
     if (trimmed.startsWith("# ")) {
-      // Save previous bullet list
-      if (currentBulletList && currentSlide) {
-        currentSlide.elements.push(currentBulletList);
-        currentBulletList = null;
+      if (!currentSlide) {
+        const title = trimmed.substring(2).trim();
+        currentSlide = { title, elements: [] };
+      } else {
+        // Additional H1s are treated as heading elements
+        if (currentBulletList) {
+          currentSlide.elements.push(currentBulletList);
+          currentBulletList = null;
+        }
+        const content = trimmed.substring(2).trim();
+        currentSlide.elements.push({ type: "heading", level: 1, content });
       }
-
-      // Save previous slide
-      if (currentSlide) {
-        slides.push(currentSlide);
-      }
-
-      const title = trimmed.substring(2).trim();
-      currentSlide = { title, elements: [] };
       continue;
     }
 
-    if (!currentSlide) continue; // Skip content before first H1
+    // Initialize slide with empty title if no H1 found yet
+    if (!currentSlide) {
+      currentSlide = { title: "", elements: [] };
+    }
 
     // H2
     if (trimmed.startsWith("## ")) {
@@ -139,12 +157,7 @@ export function parsePresentation(markdown: string): Slide[] {
     currentSlide.elements.push(currentBulletList);
   }
 
-  // Don't forget the last slide
-  if (currentSlide) {
-    slides.push(currentSlide);
-  }
-
-  return slides;
+  return currentSlide;
 }
 
 // Parse a line for links and text
