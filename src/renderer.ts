@@ -5,6 +5,7 @@ import {
   type CliRenderer,
 } from "@opentui/core";
 import type { Slide, SlideElement } from "./parser";
+import { Font } from "./fonts";
 
 export class PresentationRenderer {
   renderer: CliRenderer;
@@ -35,37 +36,50 @@ export class PresentationRenderer {
     this.links = [];
     this.selectedLinkIndex = 0;
 
-    // Background
+    // Background - fill with black then make transparent to clear screen
     const bgBox = new BoxRenderable(this.renderer, {
       position: "absolute",
       left: 0,
       top: 0,
       width: "100%",
       height: "100%",
-      backgroundColor: "#1a1a2e",
+      backgroundColor: "#000000",
       zIndex: 0,
     });
     this.renderer.root.add(bgBox);
 
-    // Title
+    // Request a render with black background to clear
+    this.renderer.requestRender();
+
+    // Wait for render to complete
+    await new Promise(resolve => setTimeout(resolve, 16));
+
+    // Now make it transparent for the actual content
+    bgBox.backgroundColor = "transparent";
+
+    // Title - render with jsstickletters font
+    const font = new Font("jsstickletters");
+    const rendered_title = font.render_to_string(slide.title.toUpperCase());
+    const title_lines = rendered_title.split("\n");
+
     const titleBox = new BoxRenderable(this.renderer, {
       position: "absolute",
       left: 5,
       top: 2,
-      width: "90%",
-      height: 3,
+      width: 120,
+      height: title_lines.length + 2,
       zIndex: 1,
     });
 
     const titleText = new TextRenderable(this.renderer, {
-      content: `  ${slide.title}`,
+      content: rendered_title,
     });
 
     titleBox.add(titleText);
     this.renderer.root.add(titleBox);
 
-    // Content starts after title
-    let yOffset = 6;
+    // Content starts after title (accounting for font height)
+    let yOffset = 2 + title_lines.length + 3;
 
     for (const element of slide.elements) {
       const result = await this.renderElement(element, 8, yOffset);
@@ -85,6 +99,31 @@ export class PresentationRenderer {
   ): Promise<{ nextY: number }> {
     switch (element.type) {
       case "heading": {
+        // Use jsstickletters font for level 1 headings (#)
+        if (element.level === 1) {
+          const font = new Font("jsstickletters");
+          const rendered_text = font.render_to_string(element.content.toUpperCase());
+          const lines = rendered_text.split("\n");
+
+          const box = new BoxRenderable(this.renderer, {
+            position: "absolute",
+            left: x,
+            top: y,
+            width: 120,
+            height: lines.length + 2,
+            zIndex: 1,
+          });
+
+          const text = new TextRenderable(this.renderer, {
+            content: rendered_text,
+          });
+
+          box.add(text);
+          this.renderer.root.add(box);
+          return { nextY: y + lines.length + 3 };
+        }
+
+        // Regular text for level 2 and 3 headings
         const prefix = element.level === 2 ? "## " : "### ";
         const box = new BoxRenderable(this.renderer, {
           position: "absolute",
@@ -114,8 +153,13 @@ export class PresentationRenderer {
           zIndex: 1,
         });
 
+        // Apply bold styling if needed
+        const content = element.bold
+          ? `\x1b[1m${element.content}\x1b[0m`
+          : element.content;
+
         const text = new TextRenderable(this.renderer, {
-          content: element.content,
+          content,
         });
 
         box.add(text);
@@ -131,7 +175,11 @@ export class PresentationRenderer {
 
           for (const part of item) {
             if (part.type === "text") {
-              content += part.content;
+              // Apply bold styling if needed
+              const textContent = part.bold
+                ? `\x1b[1m${part.content}\x1b[0m`
+                : part.content;
+              content += textContent;
             } else if (part.type === "link") {
               content += part.text;
             }

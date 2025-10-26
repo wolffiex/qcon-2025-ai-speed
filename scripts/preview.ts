@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { parsePresentation } from "../src/parser";
+import { PresentationRenderer } from "../src/renderer";
 
 const presentationPath = "./static/presentation.md";
 
@@ -15,10 +16,11 @@ async function previewSlide(slideNumber: number) {
 
   const slide = slides[slideNumber - 1];
 
-  // Output raw markdown content by extracting it from the original
-  // This preserves the original formatting
-  const slideContents = markdown.split(/\n---\n/);
-  console.log(slideContents[slideNumber - 1].trim());
+  // Create renderer and render the slide
+  const renderer = await PresentationRenderer.create();
+  renderer.slides = slides;
+  renderer.currentSlide = slideNumber - 1;
+  await renderer.renderSlide(slide);
 }
 
 const slideNumber = parseInt(process.argv[2]);

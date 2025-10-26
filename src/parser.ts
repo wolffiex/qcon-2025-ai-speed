@@ -15,6 +15,7 @@ export interface Image {
 export interface Text {
   type: "text";
   content: string;
+  bold?: boolean;
 }
 
 export interface Heading {
@@ -160,15 +161,16 @@ function parseSlide(markdown: string): Slide | null {
   return currentSlide;
 }
 
-// Parse a line for links and text
+// Parse a line for links, bold text, and regular text
 function parseLine(content: string): Array<Text | Link> {
   const elements: Array<Text | Link> = [];
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  // Match links [text](url) or bold **text**
+  const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
   let lastIndex = 0;
   let match;
 
-  while ((match = linkRegex.exec(content)) !== null) {
-    // Add text before link
+  while ((match = regex.exec(content)) !== null) {
+    // Add text before match
     if (match.index > lastIndex) {
       const text = content.substring(lastIndex, match.index);
       if (text) {
@@ -176,12 +178,22 @@ function parseLine(content: string): Array<Text | Link> {
       }
     }
 
-    // Add link
-    elements.push({
-      type: "link",
-      text: match[1],
-      url: match[2],
-    });
+    // Check if it's a link or bold
+    if (match[1] !== undefined) {
+      // It's a link [text](url)
+      elements.push({
+        type: "link",
+        text: match[1],
+        url: match[2],
+      });
+    } else if (match[3] !== undefined) {
+      // It's bold **text**
+      elements.push({
+        type: "text",
+        content: match[3],
+        bold: true,
+      });
+    }
 
     lastIndex = match.index + match[0].length;
   }
