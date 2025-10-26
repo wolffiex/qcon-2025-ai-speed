@@ -87,6 +87,13 @@ async function adjust_character(
   const row = metadata.rows[row_index];
   const char = row.chars[char_index];
 
+  // Safety check
+  if (char === undefined) {
+    console.error(`\n⚠️  ERROR: Invalid char_index ${char_index} for row ${row_index}`);
+    console.error(`   Row has ${row.chars.length} characters`);
+    return { action: 'next' };
+  }
+
   while (true) {
     console.clear();
     visualize_character(lines, row, char_index, char);
@@ -228,6 +235,15 @@ async function main() {
 
   while (current_row_index < metadata.rows.length) {
     const row = metadata.rows[current_row_index];
+
+    // Skip rows with empty or incomplete offsets
+    if (!row.offsets || row.offsets.length < row.chars.length + 1) {
+      console.log(`\n⚠️  Skipping row ${current_row_index + 1} - offsets array is empty or incomplete`);
+      console.log(`   Expected ${row.chars.length + 1} offsets, found ${row.offsets?.length || 0}`);
+      current_row_index++;
+      current_char_index = 0;
+      continue;
+    }
 
     while (current_char_index >= 0 && current_char_index < row.chars.length) {
       const result = await adjust_character(lines, metadata, current_row_index, current_char_index);
