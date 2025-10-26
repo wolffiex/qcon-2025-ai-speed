@@ -6,6 +6,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import * as readline from "readline";
+import { Font, FontMetadata, Row } from "../src/fonts";
 
 const LEGEND_GROUPS = [
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -14,30 +15,18 @@ const LEGEND_GROUPS = [
   ",./<>?;':\"[]{}",
 ];
 
-interface Row {
-  chars: string;
-  top: number;
-  bottom: number;
-  offsets: number[];
-}
-
-interface FontMetadata {
-  name: string;
-  rows: Row[];
-}
-
-function visualizeCharacter(
+function visualize_character(
   lines: string[],
   row: Row,
-  charIndex: number,
+  char_index: number,
   char: string
 ): void {
-  const left = row.offsets[charIndex];
-  const right = row.offsets[charIndex + 1] - 1;
+  const left = row.offsets[char_index];
+  const right = row.offsets[char_index + 1] - 1;
   const width = right - left + 1;
 
-  const contextLeft = Math.max(0, left - 3);
-  const contextRight = right + 3;
+  const context_left = Math.max(0, left - 3);
+  const context_right = right + 3;
 
   console.log(`\n${"=".repeat(60)}`);
   console.log(`Character: '${char}' [${char.charCodeAt(0)}]`);
@@ -46,13 +35,13 @@ function visualizeCharacter(
 
   for (let r = row.top; r <= row.bottom && r < lines.length; r++) {
     const line = lines[r] || "";
-    const segment = line.slice(contextLeft, contextRight + 1);
+    const segment = line.slice(context_left, context_right + 1);
     console.log(`|${segment}|`);
   }
 
   // Show boundary markers (only if width is positive)
   if (width > 0) {
-    const pre = " ".repeat(left - contextLeft + 1); // +1 for the | border
+    const pre = " ".repeat(left - context_left + 1); // +1 for the | border
     console.log(`${pre}${"^".repeat(width)}`);
   } else {
     console.log("  ⚠️  ERROR: Character boundaries are invalid (right < left)");
@@ -61,15 +50,15 @@ function visualizeCharacter(
   console.log(`${"=".repeat(60)}`);
 }
 
-async function readKey(): Promise<{ key: string; name?: string; shift?: boolean }> {
+async function read_key(): Promise<{ key: string; name?: string; shift?: boolean }> {
   return new Promise((resolve) => {
     readline.emitKeypressEvents(process.stdin);
     if (process.stdin.isTTY) {
       process.stdin.setRawMode(true);
     }
 
-    const onKeypress = (str: string, key: any) => {
-      process.stdin.removeListener('keypress', onKeypress);
+    const on_keypress = (str: string, key: any) => {
+      process.stdin.removeListener('keypress', on_keypress);
       if (process.stdin.isTTY) {
         process.stdin.setRawMode(false);
       }
@@ -81,22 +70,22 @@ async function readKey(): Promise<{ key: string; name?: string; shift?: boolean 
       resolve({ key: str || '', name: key.name, shift: key.shift });
     };
 
-    process.stdin.once('keypress', onKeypress);
+    process.stdin.once('keypress', on_keypress);
   });
 }
 
-async function adjustCharacter(
+async function adjust_character(
   lines: string[],
   metadata: FontMetadata,
-  rowIndex: number,
-  charIndex: number
+  row_index: number,
+  char_index: number
 ): Promise<{ action: 'next' | 'prev' }> {
-  const row = metadata.rows[rowIndex];
-  const char = row.chars[charIndex];
+  const row = metadata.rows[row_index];
+  const char = row.chars[char_index];
 
   while (true) {
     console.clear();
-    visualizeCharacter(lines, row, charIndex, char);
+    visualize_character(lines, row, char_index, char);
 
     console.log("\nPress:");
     console.log("  l = left (move start left)    r = right (move start right)");
@@ -106,7 +95,7 @@ async function adjustCharacter(
     console.log("  [Enter]/[→] = next    [←] = previous");
     console.log("");
 
-    const { key, name, shift } = await readKey();
+    const { key, name, shift } = await read_key();
 
     // Handle special keys first
     if (name === 'left') {
@@ -130,30 +119,30 @@ async function adjustCharacter(
         row.bottom = row.bottom - 1;
       }
     } else if (key === "l") {
-      // left: move THIS character's start left (decrease offsets[charIndex])
-      // Also prevents previous character from getting too wide (if charIndex > 0)
-      row.offsets[charIndex] = row.offsets[charIndex] - 1;
+      // left: move THIS character's start left (decrease offsets[char_index])
+      // Also prevents previous character from getting too wide (if char_index > 0)
+      row.offsets[char_index] = row.offsets[char_index] - 1;
     } else if (key === "r") {
-      // right: move THIS character's start right (increase offsets[charIndex])
+      // right: move THIS character's start right (increase offsets[char_index])
       // But not past the character's end
-      if (row.offsets[charIndex] < row.offsets[charIndex + 1] - 1) {
-        row.offsets[charIndex] = row.offsets[charIndex] + 1;
+      if (row.offsets[char_index] < row.offsets[char_index + 1] - 1) {
+        row.offsets[char_index] = row.offsets[char_index] + 1;
       }
     } else if (key === "w") {
-      // wider: move NEXT character's start right (increase offsets[charIndex + 1])
-      row.offsets[charIndex + 1] = row.offsets[charIndex + 1] + 1;
+      // wider: move NEXT character's start right (increase offsets[char_index + 1])
+      row.offsets[char_index + 1] = row.offsets[char_index + 1] + 1;
     } else if (key === "n") {
-      // narrower: move NEXT character's start left (decrease offsets[charIndex + 1])
+      // narrower: move NEXT character's start left (decrease offsets[char_index + 1])
       // But not before the current character's start + 1 (must leave at least 1 column)
-      if (row.offsets[charIndex + 1] > row.offsets[charIndex] + 1) {
-        row.offsets[charIndex + 1] = row.offsets[charIndex + 1] - 1;
+      if (row.offsets[char_index + 1] > row.offsets[char_index] + 1) {
+        row.offsets[char_index + 1] = row.offsets[char_index + 1] - 1;
       }
     } else if (key === "o") {
       // o: insert new offset after current character (width 3)
-      const newOffset = row.offsets[charIndex + 1] + 3;
-      row.offsets.splice(charIndex + 2, 0, newOffset);
+      const new_offset = row.offsets[char_index + 1] + 3;
+      row.offsets.splice(char_index + 2, 0, new_offset);
       // Also insert a placeholder character in the string
-      row.chars = row.chars.slice(0, charIndex + 1) + "?" + row.chars.slice(charIndex + 1);
+      row.chars = row.chars.slice(0, char_index + 1) + "?" + row.chars.slice(char_index + 1);
     }
   }
 }
@@ -167,38 +156,38 @@ async function main() {
     process.exit(1);
   }
 
-  const fontName = args[0].replace(".json", "").replace(".txt", "");
-  const jsonPath = `src/fonts/${fontName}.json`;
-  const txtPath = `src/fonts/${fontName}.txt`;
+  const font_name = args[0].replace(".json", "").replace(".txt", "");
+  const json_path = `src/fonts/${font_name}.json`;
+  const txt_path = `src/fonts/${font_name}.txt`;
 
-  if (!existsSync(jsonPath)) {
-    console.error(`❌ JSON file not found: ${jsonPath}`);
+  if (!existsSync(json_path)) {
+    console.error(`❌ JSON file not found: ${json_path}`);
     process.exit(1);
   }
 
-  if (!existsSync(txtPath)) {
-    console.error(`❌ Font file not found: ${txtPath}`);
+  if (!existsSync(txt_path)) {
+    console.error(`❌ Font file not found: ${txt_path}`);
     process.exit(1);
   }
 
   let metadata: FontMetadata;
   try {
-    metadata = JSON.parse(readFileSync(jsonPath, "utf-8"));
+    metadata = JSON.parse(readFileSync(json_path, "utf-8"));
     if (!metadata.rows) {
-      metadata = { name: fontName, rows: [] };
+      metadata = { name: font_name, rows: [] };
     }
   } catch {
     // Create empty metadata if file doesn't exist or is invalid
-    metadata = { name: fontName, rows: [] };
+    metadata = { name: font_name, rows: [] };
   }
 
-  const lines = readFileSync(txtPath, "utf-8").split("\n");
+  const lines = readFileSync(txt_path, "utf-8").split("\n");
 
   if (metadata.rows.length === 0) {
-    console.error(`\n❌ No rows found in ${jsonPath}`);
+    console.error(`\n❌ No rows found in ${json_path}`);
     console.error(`\nPlease add rows to the JSON file first. Example:`);
     console.error(`{`);
-    console.error(`  "name": "${fontName}",`);
+    console.error(`  "name": "${font_name}",`);
     console.error(`  "rows": [`);
     console.error(`    {`);
     console.error(`      "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",`);
@@ -211,60 +200,60 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\n🎨 Adjusting font: ${fontName}\n`);
+  console.log(`\n🎨 Adjusting font: ${font_name}\n`);
   console.log(`Loaded ${metadata.rows.length} rows\n`);
 
-  const startChar = args[1] || "";
+  const start_char = args[1] || "";
 
   // Find starting position
-  let currentRowIndex = 0;
-  let currentCharIndex = 0;
+  let current_row_index = 0;
+  let current_char_index = 0;
 
-  if (startChar) {
+  if (start_char) {
     outer: for (let ri = 0; ri < metadata.rows.length; ri++) {
       const row = metadata.rows[ri];
       for (let ci = 0; ci < row.chars.length; ci++) {
-        if (row.chars[ci] === startChar) {
-          currentRowIndex = ri;
-          currentCharIndex = ci;
+        if (row.chars[ci] === start_char) {
+          current_row_index = ri;
+          current_char_index = ci;
           break outer;
         }
       }
     }
   }
 
-  while (currentRowIndex < metadata.rows.length) {
-    const row = metadata.rows[currentRowIndex];
+  while (current_row_index < metadata.rows.length) {
+    const row = metadata.rows[current_row_index];
 
-    while (currentCharIndex >= 0 && currentCharIndex < row.chars.length) {
-      const result = await adjustCharacter(lines, metadata, currentRowIndex, currentCharIndex);
+    while (current_char_index >= 0 && current_char_index < row.chars.length) {
+      const result = await adjust_character(lines, metadata, current_row_index, current_char_index);
 
       // Save after each character
-      writeFileSync(jsonPath, JSON.stringify(metadata, null, 2));
+      writeFileSync(json_path, JSON.stringify(metadata, null, 2));
 
       if (result.action === 'next') {
-        currentCharIndex++;
+        current_char_index++;
       } else if (result.action === 'prev') {
-        currentCharIndex--;
-        if (currentCharIndex < 0) {
+        current_char_index--;
+        if (current_char_index < 0) {
           // Go to previous row
-          currentRowIndex--;
-          if (currentRowIndex >= 0) {
-            currentCharIndex = metadata.rows[currentRowIndex].chars.length - 1;
+          current_row_index--;
+          if (current_row_index >= 0) {
+            current_char_index = metadata.rows[current_row_index].chars.length - 1;
           } else {
-            currentRowIndex = 0;
-            currentCharIndex = 0;
+            current_row_index = 0;
+            current_char_index = 0;
           }
         }
       }
     }
 
     // Move to next row
-    currentRowIndex++;
-    currentCharIndex = 0;
+    current_row_index++;
+    current_char_index = 0;
   }
 
-  console.log(`\n✅ All adjustments saved to: ${jsonPath}`);
+  console.log(`\n✅ All adjustments saved to: ${json_path}`);
 }
 
 main().catch(console.error);

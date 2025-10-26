@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { parsePresentation } from "../src/parser";
 import { PresentationRenderer } from "../src/renderer";
 import { $ } from "bun";
