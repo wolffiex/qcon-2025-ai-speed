@@ -1,15 +1,22 @@
 // Demo: The simpler alternative that replaced SQLite
 
+import { rename } from "node:fs/promises";
+
 console.log("=== Simple Storage Solution ===\n");
 
 // Simple file-based storage with Bun
 class SimpleStorage {
   constructor(private filepath: string) {}
 
-  async save(data: any) {
+  async saveAtomically(data: any) {
     const json = JSON.stringify(data, null, 2);
-    await Bun.write(this.filepath, json);
-    console.log(`✓ Saved to ${this.filepath}`);
+
+    // Atomic write: write to temp file, then rename
+    const temp_path = `${this.filepath}.tmp`;
+    await Bun.write(temp_path, json);
+    await rename(temp_path, this.filepath);
+
+    console.log(`✓ Saved atomically to ${this.filepath}`);
   }
 
   async load() {
@@ -39,7 +46,7 @@ const conversationData = {
 };
 
 console.log("Saving conversation data...");
-await storage.save(conversationData);
+await storage.saveAtomically(conversationData);
 
 console.log("\nLoading conversation data...");
 const loaded = await storage.load();
@@ -49,6 +56,7 @@ console.log("\n✨ Benefits:");
 console.log("  • No native dependencies");
 console.log("  • No locking issues");
 console.log("  • Fails gracefully (returns null)");
+console.log("  • Atomic writes (temp file + rename)");
 console.log("  • Simple migrations (just JSON)");
 console.log("  • Built-in Bun support");
 
