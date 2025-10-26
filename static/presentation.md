@@ -311,7 +311,7 @@ source /snapshot.sh && eval "$COMMAND"
 
 ---
 
-# Episode 2: The Pattern
+# The Pattern
 
 **Three phases of discovery:**
 

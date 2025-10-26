@@ -3,6 +3,8 @@ import {
   TextRenderable,
   BoxRenderable,
   type CliRenderer,
+  StyledText,
+  bold,
 } from "@opentui/core";
 import type { Slide, SlideElement, Image } from "./parser";
 import { Font } from "./fonts";
@@ -220,7 +222,7 @@ export class PresentationRenderer {
           position: "absolute",
           left: x,
           top: y,
-          width: 70,
+          width: 120,
           height: 2,
           zIndex: 1,
         });
@@ -239,14 +241,14 @@ export class PresentationRenderer {
           position: "absolute",
           left: x,
           top: y,
-          width: 70,
+          width: 120,
           height: 2,
           zIndex: 1,
         });
 
-        // Apply bold styling if needed
+        // Apply bold styling using StyledText
         const content = element.bold
-          ? `\x1b[1m${element.content}\x1b[0m`
+          ? new StyledText([bold(element.content)])
           : element.content;
 
         const text = new TextRenderable(this.renderer, {
@@ -261,26 +263,47 @@ export class PresentationRenderer {
       case "bullets": {
         let bulletY = y;
         for (const item of element.items) {
-          let content = "  • ";
           const hasLink = item.some((el) => el.type === "link");
 
-          for (const part of item) {
-            if (part.type === "text") {
-              // Apply bold styling if needed
-              const textContent = part.bold
-                ? `\x1b[1m${part.content}\x1b[0m`
-                : part.content;
-              content += textContent;
-            } else if (part.type === "link") {
-              content += part.text;
+          // Build content - collect chunks for StyledText
+          const chunks = [];
+          const hasBoldParts = item.some(part => part.type === "text" && part.bold);
+
+          if (hasBoldParts) {
+            // Add bullet as plain text chunk
+            chunks.push({ __isChunk: true as const, text: "  • " });
+
+            // Add each part as a chunk
+            for (const part of item) {
+              if (part.type === "text") {
+                if (part.bold) {
+                  chunks.push(bold(part.content));
+                } else {
+                  chunks.push({ __isChunk: true as const, text: part.content });
+                }
+              } else if (part.type === "link") {
+                chunks.push({ __isChunk: true as const, text: part.text });
+              }
             }
+            var content = new StyledText(chunks);
+          } else {
+            // Plain string
+            let str = "  • ";
+            for (const part of item) {
+              if (part.type === "text") {
+                str += part.content;
+              } else if (part.type === "link") {
+                str += part.text;
+              }
+            }
+            var content = str;
           }
 
           const box = new BoxRenderable(this.renderer, {
             position: "absolute",
             left: x,
             top: bulletY,
-            width: 70,
+            width: 120,
             height: 2,
             zIndex: 1,
             backgroundColor: hasLink ? "#16213e" : "transparent",
