@@ -30,9 +30,9 @@ We learned what it's like to work at AI speed.
 
 ---
 
-## The Question
+## Three Examples
 
-**Three projects. AI made implementation fast.**
+**Three modules. AI made implementation fast.**
 
 **Three different outcomes:**
 - One went from 333 → 945 lines
@@ -51,8 +51,6 @@ Three war stories:
 - 🐚 **Shell:** Command execution (going broad)
 - 🗄️ **SQLite:** Storage (going back)
 
-**Each teaches something different about AI-accelerated development**
-
 ---
 
 ## The Meta-Pattern
@@ -62,8 +60,6 @@ Three war stories:
 1. **Where did the initial assumption break?**
 2. **What did shipping reveal that planning couldn't?**
 3. **How did we know to persist vs back out?**
-
-**These three stories will show different answers to each question**
 
 ---
 
@@ -269,11 +265,11 @@ source /snapshot.sh && eval "$COMMAND"
 
 ---
 
-## The Delivery Challenge
+## The Synchronization Challenge
 
-**Problem:** How to get snapshot to each command?
+**Problem:** How to write from and read to the shell
 
-**Tried:** In-memory (`source <(cat)`), stdin, temp files
+**Tried:** PIPES, stdin/stdout, temp files
 
 **Winner:** Temp files (simple beats clever)
 
@@ -292,7 +288,7 @@ source /snapshot.sh && eval "$COMMAND"
 - Users: "I don't want Claude accessing internet without asking"
 - Platform-specific sandboxing (macOS sandbox-exec vs Linux LD_PRELOAD)
 - Proxy layers, policy management
-- 3,293 lines of security code
+- 3K+ lines of security code
 
 **Total: 773 → 4,109 lines** (5.3x growth)
 
@@ -367,7 +363,10 @@ source /snapshot.sh && eval "$COMMAND"
 - Enable smooth product evolution
 - Handle schema changes gracefully
 
-**SQLite database with migrations!**
+**But here's the mistake:**
+- Built MVP without the real goal (migrations)
+- Theoretical benefits (multiprocess safety, transactions) weren't re-risked
+- Not validateing this before shipping
 
 ---
 
@@ -695,14 +694,6 @@ The key moments were realizations about "why"
 
 ---
 
-## The Pattern
-
-**The "why" determined the outcome**
-
-Not implementation speed - all three were fast to build
-
----
-
 ## What AI Gave Us
 
 ✅ Fast iteration (all three)
@@ -785,7 +776,7 @@ Learn if it's right
 
 - **Domain constraints:** café ≠ café (Unicode normalization)
 - **User workflows:** Users need their aliases
-- **Second-order effects:** Version skew causes crashes
+- **Second-order effects:** Migrations are hard
 
 **You can't predict everything upfront**
 
@@ -837,11 +828,11 @@ Learn if it's right
 **Engineering at AI Speed**
 Lessons from the First Agentically Accelerated Project
 
-**Adam Wolffis**
-Staff Software Engineer, Anthropic
+**Adam Wolff**
+Member of Technical Staff, Anthropic
 
 Twitter/X: @wolffiex
-Email: adam@anthropic.com
+Github: wolffiex
 
 **Demos & Slides:** github.com/wolffiex/qcon-2025-ai-speed
 
