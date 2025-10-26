@@ -78,7 +78,7 @@ Episode I 🎯
 - `@mentions` to reference files
 - Full keystroke control
 
-**Obvious choice:** Use a library (readline, blessed, ink)
+**Conventional wisom:** Don't rebuild input!!
 
 **Problem:** Libraries don't let us intercept everything
 - Black box input handling
@@ -89,7 +89,7 @@ Episode I 🎯
 ## The Decision
 
 > "We're building a text entry tool.
-> Move everything inside JavaScript."
+> We need control."
 
 **December 16, 2024:** Build virtual Cursor class
 - 333 lines of new code
@@ -481,9 +481,6 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 - Terminal 2: v1.6 (schema v4) ← auto-updated
 - v1.6 writes new schema → v1.5 crashes
 
-**From Slack:**
-> "The biggest multiprocess problems we've had stem from the database itself"
-
 [Demo: Version skew crash](tmux://main/bun demos/sqlite-version-skew-real.ts)
 [Demo: Concurrent load testing](tmux://main/bun demos/sqlite-multiprocess-real.ts)
 
@@ -603,16 +600,13 @@ Now judgment must replace what implementation cost used to provide.
 
 **Same tool, different contexts:**
 
-SQLite at Robinhood: ✅ Right choice
+SQL for Robinhood: ✅ Right choice
 - Financial firm: crash on inconsistency
 - Data consistency > availability
 
-SQLite at Claude Code: ❌ Wrong choice
+SQL for Claude Code: ❌ Wrong choice
 - AI app: availability critical
 - Model adapts, crashing is worst
-
-**AI implements what you ask**
-**Doesn't validate if it's right for your context**
 
 ---
 
