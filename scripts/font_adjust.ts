@@ -90,7 +90,7 @@ async function adjustCharacter(
   metadata: FontMetadata,
   rowIndex: number,
   charIndex: number
-): Promise<{ action: 'next' | 'prev' }> {
+): Promise<{ action: 'next' | 'prev' | 'newrow' }> {
   const row = metadata.rows[rowIndex];
   const char = row.chars[charIndex];
 
@@ -102,6 +102,7 @@ async function adjustCharacter(
     console.log("  l = left (move start left)    r = right (move start right)");
     console.log("  w = wider (move end right)    n = narrower (move end left)");
     console.log("  ↑ = top up    Shift+↑ = top down    ↓ = bottom down    Shift+↓ = bottom up");
+    console.log("  o = insert new offset (width 3)    R = add new row");
     console.log("  [Enter] = next    [Left Arrow] = previous");
     console.log("");
 
@@ -147,6 +148,16 @@ async function adjustCharacter(
       if (row.offsets[charIndex + 1] > row.offsets[charIndex] + 1) {
         row.offsets[charIndex + 1] = row.offsets[charIndex + 1] - 1;
       }
+    } else if (key === "o") {
+      // o: insert new offset after current character (width 3)
+      const newOffset = row.offsets[charIndex + 1] + 3;
+      row.offsets.splice(charIndex + 2, 0, newOffset);
+      // Also insert a placeholder character in the string
+      row.chars = row.chars.slice(0, charIndex + 1) + "?" + row.chars.slice(charIndex + 1);
+    } else if (key === "R") {
+      // R: add new row
+      // This returns a special action to add a row
+      return { action: 'newrow' as any };
     }
   }
 }
@@ -174,13 +185,41 @@ async function main() {
     process.exit(1);
   }
 
-  const metadata: FontMetadata = JSON.parse(readFileSync(jsonPath, "utf-8"));
+  let metadata: FontMetadata;
+  try {
+    metadata = JSON.parse(readFileSync(jsonPath, "utf-8"));
+    if (!metadata.rows) {
+      metadata = { name: fontName, rows: [] };
+    }
+  } catch {
+    // Create empty metadata if file doesn't exist or is invalid
+    metadata = { name: fontName, rows: [] };
+  }
+
   const lines = readFileSync(txtPath, "utf-8").split("\n");
 
   console.log(`\n🎨 Adjusting font: ${fontName}\n`);
   console.log(`Loaded ${metadata.rows.length} rows\n`);
 
   const startChar = args[1] || "";
+
+  // Initialize rows from legend.txt if empty or missing
+  const legendLines = readFileSync("src/fonts/legend.txt", "utf-8").trim().split("\n");
+
+  if (metadata.rows.length === 0) {
+    // Create all rows from legend
+    for (let i = 0; i < legendLines.length; i++) {
+      const chars = legendLines[i];
+      metadata.rows.push({
+        chars: chars,
+        top: i * 6,  // Estimate, user will adjust
+        bottom: i * 6 + 5,
+        offsets: Array.from({ length: chars.length + 1 }, (_, j) => j * 8)
+      });
+    }
+    writeFileSync(jsonPath, JSON.stringify(metadata, null, 2));
+    console.log(`✅ Initialized ${metadata.rows.length} rows from legend.txt\n`);
+  }
 
   // Find starting position
   let currentRowIndex = 0;
@@ -222,6 +261,19 @@ async function main() {
             currentCharIndex = 0;
           }
         }
+      } else if (result.action === 'newrow') {
+        // Add a new row after the current one
+        const newRow: Row = {
+          chars: "abcdefghijklmnopqrstuvwxyz",
+          top: row.bottom + 1,
+          bottom: row.bottom + 6,
+          offsets: Array.from({ length: 27 }, (_, i) => i * 5)
+        };
+        metadata.rows.splice(currentRowIndex + 1, 0, newRow);
+        writeFileSync(jsonPath, JSON.stringify(metadata, null, 2));
+        // Move to the new row
+        currentRowIndex++;
+        currentCharIndex = 0;
       }
     }
 
