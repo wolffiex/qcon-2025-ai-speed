@@ -441,9 +441,11 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 
 **4. Migration Nightmares**
 - Forgot `ON DELETE CASCADE` in schema
-- Can't modify constraints in SQLite
-- Migration caused data loss
-- "Still don't fully understand why"
+- Can't modify constraints in SQLite (must recreate tables)
+- Partial table migration breaks foreign keys
+- Silent data loss: child tables reference non-existent parent
+
+[Demo: Migration data loss](tmux://main/bun demos/sqlite-migration-data-loss.ts)
 
 ---
 
