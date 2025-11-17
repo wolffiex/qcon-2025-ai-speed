@@ -32,14 +32,14 @@ async function main() {
     } else if (event.name === "down") {
       // Down arrow - navigate links
       renderer.navigateLinks("down");
-    } else if (event.name === "right") {
-      // Right arrow - next slide
+    } else if (event.name === "right" || event.name === "n") {
+      // Right arrow or n - next slide
       if (renderer.currentSlide < slides.length - 1) {
         renderer.currentSlide++;
         await renderer.renderSlide(slides[renderer.currentSlide]);
       }
-    } else if (event.name === "left") {
-      // Left arrow - previous slide
+    } else if (event.name === "left" || event.name === "p") {
+      // Left arrow or p - previous slide
       if (renderer.currentSlide > 0) {
         renderer.currentSlide--;
         await renderer.renderSlide(slides[renderer.currentSlide]);
@@ -47,40 +47,78 @@ async function main() {
     } else if (event.name === "return" || event.name === "enter") {
       // Enter - activate link
       const link = renderer.getSelectedLink();
-      if (link && link.url.startsWith("tmux://")) {
-        await executeTmuxLink(link.url);
+      if (link) {
+        if (link.url.startsWith("demo://")) {
+          await executeDemoLink(link.url);
+        } else if (link.url.startsWith("asciinema://")) {
+          await playAsciinemaLink(link.url);
+        }
+      }
+    } else if (event.name === "e") {
+      // e - edit demo in vim
+      const link = renderer.getSelectedLink();
+      if (link && link.url.startsWith("demo://")) {
+        await editDemoLink(link.url);
       }
     }
   });
 }
 
-async function executeTmuxLink(url: string) {
+function parseDemoUrl(url: string): string | null {
+  const match = url.match(/^demo:\/\/(.+)$/);
+  if (!match) {
+    console.error(`Invalid demo URL: ${url}`);
+    return null;
+  }
+  return match[1];
+}
+
+async function openTmuxWindow(name: string, command: string) {
+  const r1 = await $`tmux new-window -a -t :{end} -n ${name}`.nothrow();
+  if (r1.exitCode !== 0) {
+    throw new Error(`tmux new-window failed: ${r1.stderr.toString()}`);
+  }
+  const full_command = `${command}; exit`;
+  const r2 = await $`tmux send-keys -t ${name} -l ${full_command}`.nothrow();
+  if (r2.exitCode !== 0) {
+    throw new Error(`tmux send-keys failed: ${r2.stderr.toString()}`);
+  }
+  await $`tmux send-keys -t ${name} Enter`;
+}
+
+async function executeDemoLink(url: string) {
+  const demo = parseDemoUrl(url);
+  if (!demo) return;
+
   try {
-    // Parse tmux://pane/command
-    const match = url.match(/^tmux:\/\/([^/]+)\/(.+)$/);
-    if (!match) {
-      console.error(`Invalid tmux URL: ${url}`);
-      return;
-    }
-
-    const [, pane, command] = match;
-
-    // Check if pane exists, create if not
-    try {
-      await $`tmux list-panes -t ${pane}`.quiet();
-    } catch {
-      // Pane doesn't exist, create a new window with that name
-      try {
-        await $`tmux new-window -n ${pane}`.quiet();
-      } catch {
-        // If we can't create a window, just try to send to the pane anyway
-      }
-    }
-
-    // Send keys to tmux pane
-    await $`tmux send-keys -t ${pane} ${command} Enter`;
+    await openTmuxWindow(demo, `bun demos/${demo}.ts`);
   } catch (error) {
     console.error(`Failed to execute tmux link: ${url}`, error);
+  }
+}
+
+async function editDemoLink(url: string) {
+  const demo = parseDemoUrl(url);
+  if (!demo) return;
+
+  try {
+    await openTmuxWindow("vim", `vim demos/${demo}.ts`);
+  } catch (error) {
+    console.error(`Failed to open demo in editor: ${url}`, error);
+  }
+}
+
+async function playAsciinemaLink(url: string) {
+  const match = url.match(/^asciinema:\/\/(.+)$/);
+  if (!match) {
+    throw new Error(`Invalid asciinema URL: ${url}`);
+  }
+  const file = match[1];
+
+  try {
+    await openTmuxWindow("asciinema", `/opt/homebrew/bin/asciinema play -q static/${file}`);
+  } catch (error) {
+    console.error(`Failed to play asciinema: ${url}`, error);
   }
 }
 

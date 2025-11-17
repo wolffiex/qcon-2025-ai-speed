@@ -30,11 +30,6 @@ image-position: 26, 14
 
 **It's that implementation is no longer the bottleneck.**
 
----
-
-## Claude Code
-
-![asciinema:autoplay](test.cast)
 
 ---
 
@@ -90,7 +85,12 @@ Episode I 🎯
 ---
 
 ## The Problem
-<animation>
+
+[Input Demo](asciinema://input.cast)
+
+---
+
+## The Problem
 
 **Need:** Rich text input for Claude Code
 - `/commands` for git operations
@@ -99,7 +99,7 @@ Episode I 🎯
 
 **Conventional wisdom:** Don't rebuild input!!
 
-[Demo: Readline behaviors](tmux://main/bun demos/cursor-demo.ts)
+[Demo: Readline](demo://readline)
 
 ---
 
@@ -189,9 +189,6 @@ code_border: false
 "ABC"     // 3 chars, 3 cols (ASCII)
 "ＡＢＣ"  // 3 chars, 6 cols (fullwidth)
 ```
-
-**Also:** 👨‍👩‍👧‍👦 = 7 codepoints but 1 visual unit
-
 Need proper grapheme clustering.
 
 ---
@@ -273,7 +270,7 @@ text.normalize('NFC')  // Consistent form
 **Result:** 2.9s → 8ms (362x faster!)
 **Total:** 945 lines
 
-[Demo: Performance comparison](tmux://main/bun demos/cursor-performance.ts)
+[Demo: Performance](demo://cursor-performance)
 
 ---
 
@@ -303,8 +300,6 @@ text.normalize('NFC')  // Consistent form
 - Tests make complexity manageable
 - Each feature independently testable
 
-**We could evolve fearlessly.**
-
 ---
 ---
 font: ansishadow
@@ -323,7 +318,6 @@ Episode II 🐚
 ---
 
 ## Claude's Shell
-<animation>
 
 ```typescript
 exec('ls -la')  // How hard could this be?
@@ -332,6 +326,12 @@ exec('ls -la')  // How hard could this be?
 **Narrator:** It turned out to be very hard.
 
 **This is a story about:** External dependencies
+
+---
+
+## Claude's Shell
+
+[Shell demo](asciinema://shell.cast)
 
 ---
 
@@ -392,7 +392,7 @@ export async function exec(command: string) {
 
 **Result:** 3x faster, modular, parallel by default
 
-[Demo: Parallelism](tmux://main/bun demos/shell-parallel.ts)
+[Demo: Parallelism](demo://parallel)
 
 ---
 
@@ -405,7 +405,7 @@ export async function exec(command: string) {
 
 **Total time: ~3 weeks of iteration**
 
-[Demo: nodejs pipe problems](tmux://main/bun demos/shell-parallel.ts)
+[Demo: Pipes](demo://pipes)
 
 ---
 
@@ -413,7 +413,7 @@ export async function exec(command: string) {
 
 **PersistentShell had the user environment**
 
-> Keep it simple. Users will adapt."
+> Keep it simple. Users will adapt.
 
 **Also gave up perfect state persistence:**
 - CWD tracking manually (led to months of bugs)
@@ -531,9 +531,6 @@ spawn(shell, ['-c', `source ${tmpFile} && ${command}`])
 **ShellSnapshot.ts:** 310 lines (but took 3 weeks!)
 
 **Shell.ts changes:** 31 lines (the integration was trivial)
-
-[Demo: Snapshots](tmux://main/bun demos/shell-snapshot.ts)
-
 
 ---
 
@@ -672,7 +669,7 @@ text_color: #DC2626
 
 ---
 ---
-image-position: 62, 12
+image-position: 62, 11
 text_color: #82AADC
 ---
 
@@ -682,6 +679,12 @@ Episode III 💀
 
 # Reversing SQLite
 ![rip](rip.txt)
+
+---
+
+## Resume
+
+[Shell demo](asciinema://resume.cast)
 
 ---
 
@@ -715,8 +718,6 @@ Merged database implementation with beautiful schema:
 
 **That evening:** Re-merged (second try)
 
-[Show schema](tmux://main/bun demos/sqlite-before.ts)
-
 ---
 
 ## Trouble
@@ -734,7 +735,7 @@ Merged database implementation with beautiful schema:
 
 ## Decision
 
-The end: Adding a new multiprocess feature that bypasses the db
+It's over: Another dev avoids DB for multiprocess
 
 Slack post: "The beginning of the end for our brief but painful misadventure"
 
@@ -770,7 +771,7 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 - Unexpected for developers expecting row/table locking
 - WAL mode helps but adds complexity
 
-[Demo: Locking behavior](tmux://main/bun demos/sqlite-multiprocess.ts)
+[Demo: Locking ](demo://locking)
 
 ---
 
@@ -782,7 +783,7 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 - Partial table migration breaks foreign keys
 - Silent data loss: child tables reference non-existent parent
 
-[Demo: Migration data loss](tmux://main/bun demos/sqlite-migration-data-loss.ts)
+[Demo: Migration data loss](demo://migration)
 
 ---
 
@@ -795,10 +796,9 @@ Slack post: "The beginning of the end for our brief but painful misadventure"
 **The scenario:**
 - Terminal 1: v1.5 (schema v3)
 - Terminal 2: v1.6 (schema v4) ← auto-updated
-- v1.6 writes new schema → v1.5 crashes
+- v1.5 writes invalid row
 
-[Demo: Version skew crash](tmux://main/bun demos/sqlite-version-skew-real.ts)
-[Demo: Concurrent load testing](tmux://main/bun demos/sqlite-multiprocess-real.ts)
+[Demo: Version skew](demo://version-skew)
 
 **Intended to solve coordination → became the liability**
 
@@ -814,8 +814,6 @@ fs.appendFileSync(file, JSON.stringify(msg) + '\n')
 ```
 
 No dependencies. No locking. Works everywhere.
-
-[Show alternative](tmux://main/bun demos/simple-storage.ts)
 
 ---
 
@@ -872,7 +870,7 @@ text_color: #B1B9F9
 
 ---
 
-## The Pattern
+## Outcomes
 
 **Three possible outcomes when you experiment:**
 
@@ -899,6 +897,9 @@ text_color: #B1B9F9
 - SQLite: Tried it → learned it was wrong
 
 ---
+---
+code_border: false
+---
 
 ## Traditional Loop
 
@@ -915,6 +916,9 @@ Result: **Must get requirements "right" upfront**
 
 Hard to connect these feedback loops
 
+---
+---
+code_border: false
 ---
 
 ## The Shift
@@ -950,22 +954,6 @@ Remember this?
 
 ---
 
-## Cadence Matters
-
-**Our three experiments:**
-- Cursor: 9 months of incremental Unicode discoveries
-- Shell: 3 weeks to get snapshots right (5+ iterations)
-- SQLite: 15 days to learn and reverse
-
-**None of this works without rapid feedback:**
-- Users hit Unicode edge cases → we fixed same day/week
-- Users complained about aliases → we knew immediately
-- Users hit install failures → we saw it in days
-
-**Fast shipping = fast learning = fast iteration**
-
----
-
 ## Keep it simple
 
 Being a CLI is another way we optimize for fast iteration
@@ -973,10 +961,7 @@ What can you do to simplify your distribution?
 
 ---
 
-## How to Work 
-## at AI Speed
-
-**The practical playbook:**
+## Playbook
 
 **1. Ship small, ship often**
 - Set up continuous deployment
@@ -985,10 +970,7 @@ What can you do to simplify your distribution?
 
 ---
 
-## How to Work 
-## at AI Speed
-
-**The practical playbook:**
+## Playbook
 
 **2. Make reversal cheap**
 - Feature flags for experiments
@@ -997,10 +979,7 @@ What can you do to simplify your distribution?
 
 ---
 
-## How to Work 
-## at AI Speed
-
-**The practical playbook:**
+## Playbook
 
 **3. You have to unship**
 - Don't curate features, edit them
@@ -1017,7 +996,7 @@ What can you do to simplify your distribution?
 
 **The next frontiers:**
 - Generating actionable insights from scaled freeform user feedback
-- Version split-testing in evals
+- Sensitive evals
 - Continued investment in build, release, and distribution
 
 ---
@@ -1039,8 +1018,6 @@ But the principle applies everywhere:
 
 **Experiment with using AI to automate your own work**
 
-In that way, we're all dogfooders now.
-
 ---
 
 ## The Takeaway
@@ -1052,7 +1029,7 @@ In that way, we're all dogfooders now.
 > Implementation is becoming free.
 > Feedback loops are becoming everything.
 
-Optimize for speed of learning than quality of judgment.
+Optimize for speed of learning, not quality of judgment.
 
 **Ship faster. Close the loop. 🚀**
 

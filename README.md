@@ -15,11 +15,21 @@ This repository contains the presentation materials and live demos for the talk 
 
 The talk draws from our experience building [Claude Code](https://claude.com/claude-code), Anthropic's CLI for AI-assisted development—the first AI coding agent built using itself. **90% of Claude Code's code is written with or by Claude Code**, giving us unique insights into what it means to work at AI speed.
 
-## The Messge
+## The Message
 
-> **AI gives you velocity. You provide direction.**
+> **Implementation is becoming free. Feedback loops are becoming everything.**
 
-Engineering at AI speed isn't about writing code faster—it's about asking "why?" better.
+The shift isn't that AI writes code faster—it's that you can now optimize for speed of learning rather than quality of judgment.
+
+## Three Stories
+
+The talk explores three real implementations from Claude Code:
+
+1. **Rebuilding Input 🎯** - 333 → 945 lines over 9 months. Custom text input with Unicode handling. Success through testable architecture.
+
+2. **Reimagining Shell 🐚** - Pivoted from persistent to transient shells. Discovered snapshot pattern through experimentation.
+
+3. **Reversing SQLite 🗄️** - 15 days from launch to removal. Learned architectural problems couldn't be predicted from debate.
 
 ## Running the Presentation
 
@@ -67,21 +77,26 @@ The presentation itself runs on a custom terminal-based presentation system we b
 - ASCII art rendering
 - Live code execution via tmux integration
 - Interactive navigation
+- asciicinema playback
 
-For technical details about the presentation framework, see [docs/markdown.md](docs/markdown.md).
+## Three Questions to Ask
 
-## Three Questions to Ask Yourself
+When evaluating any experiment:
 
-When engineering at AI speed:
-
-1. **What will shipping reveal that planning can't?**
+1. **What does shipping reveal that planning can not?**
    Domain constraints, user workflows, second-order effects
 
-2. **Is this complexity earned by reality?**
-   Does something break without it?
+2. **What architectures enable evolution?**
+   Testability, composability, minimal dependencies
 
-3. **Am I iterating toward or away from simple?**
-   Complexity should decrease as understanding increases
+3. **What distinguishes detours from dead ends?**
+   Does pain decrease or increase with each iteration?
+
+## The Practical Playbook
+
+1. **Ship small, ship often** - Target hours not days
+2. **Make reversal cheap** - Feature flags, modular architecture
+3. **You have to unship** - Don't rationalize wrong turns, reverse them
 
 ## Contact
 

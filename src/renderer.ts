@@ -6,6 +6,7 @@ import {
   StyledText,
   bold,
   fg,
+  bg,
   getTreeSitterClient,
   treeSitterToStyledText,
   SyntaxStyle,
@@ -19,7 +20,7 @@ export class PresentationRenderer {
   renderer: CliRenderer;
   currentSlide = 0;
   slides: Slide[] = [];
-  links: Array<{ text: string; url: string; box: BoxRenderable }> = [];
+  links: Array<{ text: string; url: string; box: BoxRenderable; textRenderable: TextRenderable; isStandalone: boolean }> = [];
   selectedLinkIndex = 0;
   treeSitterClient: Awaited<ReturnType<typeof getTreeSitterClient>>;
   syntaxStyle: SyntaxStyle;
@@ -479,7 +480,7 @@ export class PresentationRenderer {
           if (hasLink) {
             const link = item.find((el) => el.type === "link");
             if (link && link.type === "link") {
-              this.links.push({ text: link.text, url: link.url, box });
+              this.links.push({ text: link.text, url: link.url, box, textRenderable: text, isStandalone: false });
             }
           }
 
@@ -523,26 +524,33 @@ export class PresentationRenderer {
       }
 
       case "link": {
+        const button_width = element.text.length + 2;
+        const top_line = "▄".repeat(button_width);
+        const bottom_line = "▀".repeat(button_width);
+
         const box = new BoxRenderable(this.renderer, {
           position: "absolute",
           left: x,
           top: y,
-          width: element.text.length + 4,
-          height: 2,
+          width: button_width,
+          height: 3,
           zIndex: 1,
-          backgroundColor: "#16213e",
         });
 
-        const text = new TextRenderable(this.renderer, {
-          content: `  ${element.text}`,
+        const textRenderable = new TextRenderable(this.renderer, {
+          content: new StyledText([
+            fg("#4A6B8A")(top_line + "\n"),
+            bg("#4A6B8A")(fg("#1a1a1a")(` ${element.text} \n`)),
+            fg("#4A6B8A")(bottom_line),
+          ]),
         });
 
-        box.add(text);
+        box.add(textRenderable);
         this.renderer.root.add(box);
 
-        this.links.push({ text: element.text, url: element.url, box });
+        this.links.push({ text: element.text, url: element.url, box, textRenderable, isStandalone: true });
 
-        return { nextY: y + 2 };
+        return { nextY: y + 3 };
       }
 
       case "card": {
@@ -812,14 +820,48 @@ export class PresentationRenderer {
   }
 
   highlightLink(index: number) {
-    // Remove highlight from all links
+    // Remove highlight from all links and reset styling
     this.links.forEach((link) => {
-      link.box.backgroundColor = "#16213e";
+      const button_width = link.text.length + 2;
+      const top_line = "▄".repeat(button_width);
+      const bottom_line = "▀".repeat(button_width);
+
+      if (link.isStandalone) {
+        link.textRenderable.content = new StyledText([
+          fg("#4A6B8A")(top_line + "\n"),
+          bg("#4A6B8A")(fg("#1a1a1a")(` ${link.text} \n`)),
+          fg("#4A6B8A")(bottom_line),
+        ]);
+      } else {
+        // Bullet list link
+        link.textRenderable.content = new StyledText([
+          { __isChunk: true as const, text: "  • " },
+          { __isChunk: true as const, text: link.text }
+        ]);
+      }
     });
 
     // Highlight selected link
     if (index >= 0 && index < this.links.length) {
-      this.links[index].box.backgroundColor = "#e94560";
+      const selectedLink = this.links[index];
+      const button_width = selectedLink.text.length + 2;
+      const top_line = "▄".repeat(button_width);
+      const bottom_line = "▀".repeat(button_width);
+
+      if (selectedLink.isStandalone) {
+        // Highlighted: brighter background and dark text
+        selectedLink.textRenderable.content = new StyledText([
+          fg("#82AADC")(top_line + "\n"),
+          bg("#82AADC")(fg("#1a1a1a")(` ${selectedLink.text} \n`)),
+          fg("#82AADC")(bottom_line),
+        ]);
+      } else {
+        // Bullet list link - highlight with color
+        selectedLink.textRenderable.content = new StyledText([
+          fg("#82AADC")(`  • ${selectedLink.text}`)
+        ]);
+      }
+
       this.selectedLinkIndex = index;
     }
   }
